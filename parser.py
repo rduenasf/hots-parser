@@ -1,6 +1,6 @@
 __author__ = 'cristiano'
-from libs.s2protocol import protocol15405
-from libs.s2protocol.mpyq import mpyq
+from s2protocol import protocol15405
+from s2protocol.mpyq import mpyq
 
 class HeroReplay():
     def __init__(self):
