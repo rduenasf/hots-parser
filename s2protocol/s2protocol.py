@@ -23,6 +23,7 @@
 import sys
 import argparse
 import pprint
+import json
 
 from mpyq import mpyq
 import protocol15405
@@ -31,7 +32,7 @@ import protocol15405
 class EventLogger:
     def __init__(self):
         self._event_stats = {}
-        
+
     def log(self, output, event):
         # update stats
         if '_event' in event and '_bits' in event:
@@ -40,12 +41,12 @@ class EventLogger:
             stat[1] += event['_bits']  # count of bits
             self._event_stats[event['_event']] = stat
         # write structure
-        pprint.pprint(event, stream=output)
-        
+        pprint.pprint(json.dumps(event), stream=output)
+
     def log_stats(self, output):
         for name, stat in sorted(self._event_stats.iteritems(), key=lambda x: x[1][1]):
             print >> output, '"%s", %d, %d,' % (name, stat[0], stat[1] / 8)
-    
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -69,7 +70,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     archive = mpyq.MPQArchive(args.replay_file)
-    
+
     logger = EventLogger()
 
     # Read the protocol header, this can be read with any protocol
@@ -85,45 +86,45 @@ if __name__ == '__main__':
     except:
         print >> sys.stderr, 'Unsupported base build: %d' % baseBuild
         sys.exit(1)
-        
+
     # Print protocol details
     if args.details:
         contents = archive.read_file('replay.details')
         details = protocol.decode_replay_details(contents)
-        logger.log(sys.stdout, details)
+
+        details['m_cacheHandles'] = None
+
+        logger.log(sys.stdout, json.details)
 
     # Print protocol init data
     if args.initdata:
         contents = archive.read_file('replay.initData')
         initdata = protocol.decode_replay_initdata(contents)
-        logger.log(sys.stdout, initdata['m_syncLobbyState']['m_gameDescription']['m_cacheHandles'])
+        initdata['m_syncLobbyState']['m_gameDescription']['m_cacheHandles'] = None
         logger.log(sys.stdout, initdata)
 
     # Print game events and/or game events stats
     if args.gameevents:
         contents = archive.read_file('replay.game.events')
-        for event in protocol.decode_replay_game_events(contents):
-            logger.log(sys.stdout, event)
+        logger.log(sys.stdout, [event for event in protocol.decode_replay_game_events(contents)])
 
     # Print message events
     if args.messageevents:
         contents = archive.read_file('replay.message.events')
-        for event in protocol.decode_replay_message_events(contents):
-            logger.log(sys.stdout, event)
+        logger.log(sys.stdout, [event for event in protocol.decode_replay_message_events(contents)])
 
     # Print tracker events
     if args.trackerevents:
         if hasattr(protocol, 'decode_replay_tracker_events'):
             contents = archive.read_file('replay.tracker.events')
-            for event in protocol.decode_replay_tracker_events(contents):
-                logger.log(sys.stdout, event)
+            logger.log(sys.stdout, [event for event in protocol.decode_replay_tracker_events(contents)])
 
     # Print attributes events
     if args.attributeevents:
         contents = archive.read_file('replay.attributes.events')
         attributes = protocol.decode_replay_attributes_events(contents)
         logger.log(sys.stdout, attributes)
-        
+
     # Print stats
     if args.stats:
         logger.log_stats(sys.stderr)
