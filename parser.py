@@ -2,6 +2,7 @@
 from s2protocol import protocol15405, protocol34835
 from s2protocol.mpyq import mpyq
 import json
+import sys
 
 class HeroReplay():
     def __init__(self):
@@ -66,15 +67,27 @@ def toJson(proto, content):
     total = 0
     events = proto.decode_replay_game_events(content)
     for e in events:
-        total += 1
-        if e['_event'] in excludeList or e['_gameloop'] == 0:
-            pass
-        else:
-            eventList.append(e)
+        eventList.append(e)
+        # total += 1
+        # if e['_event'] in excludeList or e['_gameloop'] == 0:
+        #     pass
+        # else:
+        #     eventList.append(e)
 
     print total
     print len(eventList)
     print json.dumps(eventList)
+
+
+
+def lol(proto, content):
+    trackerEvents = proto.decode_replay_tracker_events(content)
+    for t in trackerEvents:
+        if t['_event'] == 'NNet.Replay.Tracker.SPlayerStatsEvent':
+            for metric in t['m_stats'].keys():
+                if t['m_stats'][metric] != 0:
+                    print "for %s %d" % (metric, t['m_stats'][metric])
+
 
 def eventsPerType(proto, content):
     eventsData = {}
@@ -97,6 +110,16 @@ def getTalentSelected(proto, content):
 
     print total
 
+def getUnitsInGame(proto, content):
+    total = 0
+    unitsInGame = {}
+    trackerEvents = proto.decode_replay_tracker_events(content)
+    for te in trackerEvents:
+        if te['_event'] == 'NNet.Replay.Tracker.SUnitBornEvent':
+            total += 1
+            unitsInGame['%s-%s' % (te['m_unitTagIndex'],te['m_unitTagRecycle'])] = {'Name': te['m_unitTypeName'], 'createdAt': te['_gameloop']/16}
+
+    return unitsInGame
 
 
 
@@ -121,22 +144,27 @@ replayData = HeroReplay()
 
 p = protocol15405
 p2 = protocol34835
-replay = mpyq.MPQArchive('NimaGae.StormReplay')
+replay = mpyq.MPQArchive(sys.argv[1])
 contents = replay.read_file('replay.game.events')
+contents2 = replay.read_file('replay.tracker.events')
 
 #headers = getHeaders(p, replay)
-toJson(p2, contents)
+#toJson(p2, contents)
 #getTalentSelected(p2, contents)
 #eventsPerType(p2, contents)
+units = getUnitsInGame(p2, contents2)
+# for key in sorted(units.keys()):
+#     print "%s: %s" % (key, units[key])
 # Fill replay data
 #replayData.duration = headers['m_elapsedGameLoops']/16
 #print headers
 #print replayData.duration
+#lol(p2, contents2)
 
 
 
-
-
+for key, value in sorted(units.iteritems(), key=lambda (k,v): (v,k)):
+    print "%s: %s" % (key, value)
 
 
 
