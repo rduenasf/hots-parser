@@ -85,7 +85,7 @@ def processEvents(proto=None, replayFile=None):
         return -1
 
     eh = eventHandler()
-    print "nimascala"
+
 
 
     for meta in EVENTS.keys():
@@ -96,7 +96,7 @@ def processEvents(proto=None, replayFile=None):
                 getattr(eh, event['_event'].replace('.','_'))(event)
 
 
-
+    print json.dumps(eh.unitsInGame)
 
 
 
@@ -169,8 +169,7 @@ def getUnitsInGame(proto, e, unitsInGame):
         if unitIndex in unitsInGame:
           print "ERROR CTM"
         else:
-          unitsInGame[unitIndex] = {'Name': e['m_unitTypeName'], 'createdAt': e['_gameloop']/16}
-          print json.dumps(unitsInGame[unitIndex])
+            unitsInGame[unitIndex] = {'Name': e['m_unitTypeName'], 'createdAt': e['_gameloop']/16}
 
 
 
