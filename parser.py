@@ -1,6 +1,7 @@
 
 from s2protocol import protocol15405, protocol34835
 from s2protocol.mpyq import mpyq
+from utils import EVENTS
 import json
 import sys
 
@@ -36,9 +37,6 @@ class HeroUnit():
         maxKillSpree = 0 # maximum number of heroes killed after (if ever) die
 
 
-    # for now no getters nor setters ... just direct access to the structure
-
-
 class PlayerUnit():
 
     def __init__(self):
@@ -47,6 +45,59 @@ class PlayerUnit():
         region = ''
         id = ''
         realm = ''
+
+
+class eventHandler():
+
+    # list of implemented event handlers
+    IMPLEMENTED = ('NNet.Replay.Tracker.SUnitBornEvent')
+
+    unitsInGame = {}
+
+    def NNet_Replay_Tracker_SUnitBornEvent(self, event):
+        """
+        This function process the events of the type NNet.Replay.Tracker.SUnitBornEvent
+        """
+        if event['_event'] != 'NNet.Replay.Tracker.SUnitBornEvent':
+            return None
+
+        getUnitsInGame(protocol34835, event, self.unitsInGame) #TODO move the protocol somewhere else
+        print self.unitsInGame
+
+
+def decode_replay(replayFile, eventToDecode=None):
+    """
+    Gets the content of a particular event
+    """
+    if eventToDecode not in EVENTS.keys():
+        print "Error - Unknown event %s" % eventToDecode
+        return -1
+
+    return replayFile.read_file(eventToDecode)
+
+
+def processEvents(proto=None, replayFile=None):
+    """"
+    This is the main loop, reads a replayFile and applies available decoders (trackerEvents, gameEvents, msgEvents, etc)
+    Receives the protocol and the replayFile as an mpyq file object
+    """
+    if not proto or not replayFile:
+        print "Error - Protocol and replayFire are needed"
+        return -1
+
+    eh = eventHandler()
+
+    for meta in EVENTS.keys():
+        content = decode_replay(replayFile, meta)
+        events = getattr(proto,EVENTS[meta])(content)
+        for event in events:
+            if event['_event'] in eh.IMPLEMENTED:
+                getattr(eh, event['_event'].replace('.','_'))(event)
+
+
+
+
+
 
 def getHeaders(proto, replayFile):
     return proto.decode_replay_header(replayFile.header['user_data_header']['content'])
@@ -110,16 +161,12 @@ def getTalentSelected(proto, content):
 
     print total
 
-def getUnitsInGame(proto, content):
-    total = 0
-    unitsInGame = {}
-    trackerEvents = proto.decode_replay_tracker_events(content)
-    for te in trackerEvents:
-        if te['_event'] == 'NNet.Replay.Tracker.SUnitBornEvent':
-            total += 1
-            unitsInGame['%s-%s' % (te['m_unitTagIndex'],te['m_unitTagRecycle'])] = {'Name': te['m_unitTypeName'], 'createdAt': te['_gameloop']/16}
+def getUnitsInGame(proto, e, unitsInGame):
 
-    return unitsInGame
+    if e['_event'] == 'NNet.Replay.Tracker.SUnitBornEvent':
+        unitsInGame['%s-%s' % (e['m_unitTagIndex'],e['m_unitTagRecycle'])] = {'Name': e['m_unitTypeName'], 'createdAt': e['_gameloop']/16}
+
+
 
 
 
@@ -138,21 +185,24 @@ def getUnitsInGame(proto, content):
  # 'NNet.Game.STriggerKeyPressedEvent'
 
 
-heroes = []
-players = []
-replayData = HeroReplay()
-
-p = protocol15405
+# heroes = []
+# players = []
+# replayData = HeroReplay()
+#
+# p = protocol15405
 p2 = protocol34835
 replay = mpyq.MPQArchive(sys.argv[1])
-contents = replay.read_file('replay.game.events')
-contents2 = replay.read_file('replay.tracker.events')
+processEvents(p2, replay)
+
+
+# contents = replay.read_file('replay.game.events')
+# contents2 = replay.read_file('replay.tracker.events')
 
 #headers = getHeaders(p, replay)
 #toJson(p2, contents)
 #getTalentSelected(p2, contents)
 #eventsPerType(p2, contents)
-units = getUnitsInGame(p2, contents2)
+# units = getUnitsInGame(p2, contents2)
 # for key in sorted(units.keys()):
 #     print "%s: %s" % (key, units[key])
 # Fill replay data
@@ -162,10 +212,10 @@ units = getUnitsInGame(p2, contents2)
 #lol(p2, contents2)
 
 
-
-for key, value in sorted(units.iteritems(), key=lambda (k,v): (v,k)):
-    print "%s: %s" % (key, value)
-
+#
+# for key, value in sorted(units.iteritems(), key=lambda (k,v): (v,k)):
+#     print "%s: %s" % (key, value)
+#
 
 
 
