@@ -62,7 +62,6 @@ class eventHandler():
             return None
 
         getUnitsInGame(protocol34835, event, self.unitsInGame) #TODO move the protocol somewhere else
-        print self.unitsInGame
 
 
 def decode_replay(replayFile, eventToDecode=None):
@@ -86,6 +85,8 @@ def processEvents(proto=None, replayFile=None):
         return -1
 
     eh = eventHandler()
+    print "nimascala"
+
 
     for meta in EVENTS.keys():
         content = decode_replay(replayFile, meta)
@@ -164,7 +165,12 @@ def getTalentSelected(proto, content):
 def getUnitsInGame(proto, e, unitsInGame):
 
     if e['_event'] == 'NNet.Replay.Tracker.SUnitBornEvent':
-        unitsInGame['%s-%s' % (e['m_unitTagIndex'],e['m_unitTagRecycle'])] = {'Name': e['m_unitTypeName'], 'createdAt': e['_gameloop']/16}
+        unitIndex = (e['m_unitTagIndex'] << 18) + e['m_unitTagRecycle']
+        if unitIndex in unitsInGame:
+          print "ERROR CTM"
+        else:
+          unitsInGame[unitIndex] = {'Name': e['m_unitTypeName'], 'createdAt': e['_gameloop']/16}
+          print json.dumps(unitsInGame[unitIndex])
 
 
 
