@@ -60,6 +60,19 @@ class PlayerUnit():
         id = ''
         realm = ''
 
+class GameUnit():
+    def __init__(self):
+        # General Data
+        self.internalName = '' #Unit Name
+        self.bornAt = None # Seconds into the game when it was created
+        self.bornAtGameLoops = None
+        self.diedAtGameLoops = None
+        self.team = None # The team this unit belongs to
+        self.diedAt = None # Seconds into the game when it was destroyed
+        self.gameLoopsAlive = -1 # -1 means never died.
+        self.unitIndex = None
+        self.wasPicked = False # for collectables
+
 
 class eventHandler():
 
@@ -91,6 +104,8 @@ class eventHandler():
             return None
 
         getHeroDeathsFromReplayEvt(event, self.heroList)
+        getUnitDestruction(event, self.unitsInGame)
+
 
     def NNet_Game_SCameraUpdateEvent(self, event):
         # Populate Hero Death events based game Events
@@ -99,6 +114,20 @@ class eventHandler():
 
         getHeroDeathsFromGameEvt(event, self.heroList)
 
+def getGemPicked(e, unitList):
+    """
+    Gets soul gems that were never picked up
+    This function should run after the events are parsed and the unitList creation/destruction info is populated
+    """
+
+    gemUnitIndexes = [key for (key, value) in sorted(unitList.items()) if value.internalName == 'ItemSoulPickup']
+    for gemIndex in gemUnitIndexes:
+        if unitList[gemIndex].gameLoopsAlive in xrange(0,127):
+            unitList[gemIndex].wasPicked = True
+
+
+
+#def getArmyStr()
 
 
 def getHero(e, heroList):
@@ -115,6 +144,19 @@ def getHero(e, heroList):
         newHero.playerId = e['m_upkeepPlayerId']
 
         heroList[newHero.unitIndex]= newHero
+
+def getUnitDestruction(e, unitsInGame):
+    """
+    Gets information when a non-hero unit is destroyed
+    """
+    if e['_event'] == 'NNet.Replay.Tracker.SUnitDiedEvent':
+        deadUnitIndex = (e['m_unitTagIndex'] << 18) + e['m_unitTagRecycle']
+        try:
+            unitsInGame[deadUnitIndex].diedAt = int(e['_gameloop']/16)
+            unitsInGame[deadUnitIndex].diedAtGameLoops = e['_gameloop']
+            unitsInGame[deadUnitIndex].gameLoopsAlive = unitsInGame[deadUnitIndex].diedAtGameLoops - unitsInGame[deadUnitIndex].bornAtGameLoops
+        except:
+           pass
 
 def getHeroDeathsFromReplayEvt(e, heroList):
     """
@@ -155,7 +197,20 @@ def getHeroDeathsFromGameEvt(e, heroList):
             heroList[unitIndex].deathList[eventTime] = heroDeathEvent # and this is actually the respawn time, not death time
             heroList[unitIndex].deathCount += 1
 
+def getUnitsInGame(e, unitsInGame):
 
+    """
+    Stores all non-hero units
+    """
+    if e['_event'] == 'NNet.Replay.Tracker.SUnitBornEvent' and not e['m_unitTypeName'].startswith('Hero'):
+        unitIndex = (e['m_unitTagIndex'] << 18) + e['m_unitTagRecycle']
+        unit = GameUnit()
+        unit.unitIndex = unitIndex
+        unit.bornAt = int(e['_gameloop']/16)
+        unit.bornAtGameLoops = e['_gameloop']
+        unit.internalName = e['m_unitTypeName']
+        unit.team = e['m_upkeepPlayerId'] - 10
+        unitsInGame[unitIndex] = unit
 
 
 def decode_replay(replayFile, eventToDecode=None):
@@ -178,9 +233,11 @@ def processEvents(proto=None, replayFile=None):
         print "Error - Protocol and replayFire are needed"
         return -1
 
+    # Pre parse preparation go here
     eh = eventHandler()
 
 
+    # Parse
 
     for meta in EVENTS.keys():
         content = decode_replay(replayFile, meta)
@@ -190,8 +247,23 @@ def processEvents(proto=None, replayFile=None):
                 getattr(eh, event['_event'].replace('.','_'))(event)
 
 
-    for index in eh.heroList:
-        print "%s: %s" % (eh.heroList[index].internalName, eh.heroList[index].deathCount)
+    # After parse functions go here
+    getGemPicked(event, eh.unitsInGame)
+
+
+    for index in eh.unitsInGame:
+        if eh.unitsInGame[index].internalName == 'ItemSoulPickup':
+            print "%d %s (%d) - created: %d | died: %s | alive: %s | picked? (%s)" \
+                  % (index, eh.unitsInGame[index].internalName,
+                     eh.unitsInGame[index].team,
+                     eh.unitsInGame[index].bornAt,
+                     eh.unitsInGame[index].diedAt,
+                     eh.unitsInGame[index].gameLoopsAlive,
+                     eh.unitsInGame[index].wasPicked
+            )
+
+    #for index in eh.heroList:
+        #print "%s: %s" % (eh.heroList[index].internalName, eh.heroList[index].deathCount)
         #keys = eh.heroList[hero].deathList.keys()
         #print eh.unitsInGame[eh.heroList[hero].deathList[keys[0]]['killerUnitIndex']]
 
@@ -259,14 +331,7 @@ def getTalentSelected(proto, content):
 
     print total
 
-def getUnitsInGame(e, unitsInGame):
 
-    if e['_event'] == 'NNet.Replay.Tracker.SUnitBornEvent':
-        unitIndex = (e['m_unitTagIndex'] << 18) + e['m_unitTagRecycle']
-        if unitIndex in unitsInGame:
-          print "ERROR CTM"
-        else:
-            unitsInGame[unitIndex] = {'Name': e['m_unitTypeName'], 'createdAt': e['_gameloop']/16}
 
 
 

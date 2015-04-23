@@ -6,3 +6,4 @@ EVENTS = {'replay.game.events': 'decode_replay_game_events',
           'replay.tracker.events': 'decode_replay_tracker_events'}
 
 HEROACTIONS = [] # empty = ALL
+MAP_ARMY = {'Town'}
