@@ -1,3 +1,4 @@
+__author__ = 'Rodrigo Duenas, Cristian Orellana'
 
 from s2protocol import protocol15405, protocol34835
 from s2protocol.mpyq import mpyq
@@ -18,23 +19,36 @@ class HeroUnit():
 
     def __init__(self):
         # General data
-        name = ''
-        isHuman = False
-        playerUnit = None
-        team = None
+        self.name = ''
+        self.internalName = ''
+        self.isHuman = False
+        self.playerId = None
+        self.team = None
+        self.unitIndex = [] # list of known unitIndex for the hero
 
         # Metrics
-        deathCount = 0
-        killCountNeutral = 0 # How many neutral npc units this hero killed?
-        killCountBuildings = 0 # How many buildings this hero destroyed?
-        killCountMinions = 0 # How many minions this hero killed?
-        killCount = 0 # How many units this hero killed (normal minions + heroes + buildings + neutral npcs)
-        killCountHeroes = 0 # How many heroes this hero killed?
-        totalOutDamage = 0 # How much damage this hero did?
-        totalOutHeal = 0 # How much heal this hero did?
-        totalIncDamage = 0 # How much damage this hero received
-        totalIncHeal = 0 # How much heal this hero received
-        maxKillSpree = 0 # maximum number of heroes killed after (if ever) die
+        self.deathCount = 0
+        self.deathList = {} # At what point in game (in seconds) the hero died
+        self.killCountNeutral = 0 # How many neutral npc units this hero killed?
+        self.killCountBuildings = 0 # How many buildings this hero destroyed?
+        self.killCountMinions = 0 # How many minions this hero killed?
+        self.killCount = 0 # How many units this hero killed (normal minions + heroes + buildings + neutral npcs)
+        self.killCountHeroes = 0 # How many heroes this hero killed?
+        self.totalOutDamage = 0 # How much damage this hero did?
+        self.totalOutHeal = 0 # How much heal this hero did?
+        self.totalIncDamage = 0 # How much damage this hero received
+        self.totalIncHeal = 0 # How much heal this hero received
+        self.maxKillSpree = 0 # maximum number of heroes killed after (if ever) die
+
+    def __str__(self):
+
+        return "name: %s\n" \
+              "internalName: %s\n" \
+              "isHuman: %s\n" \
+              "playerId: %s\n" \
+              "team: %s\n" \
+              "unitIndex: %s\n" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitIndex)
+
 
 
 class PlayerUnit():
@@ -50,9 +64,13 @@ class PlayerUnit():
 class eventHandler():
 
     # list of implemented event handlers
-    IMPLEMENTED = ('NNet.Replay.Tracker.SUnitBornEvent')
+    IMPLEMENTED = ('NNet.Replay.Tracker.SUnitBornEvent', 'NNet.Replay.Tracker.SUnitDiedEvent', 'NNet.Game.SCameraUpdateEvent')
 
     unitsInGame = {}
+    heroActions = {} # this is a dictionary , the key is the hero indexId, the value is a list of tuples
+                    # (secsInGame, action)
+    heroList = {} # key = playerId - content = hero instance
+    heroDeathsList = list()
 
     def NNet_Replay_Tracker_SUnitBornEvent(self, event):
         """
@@ -61,7 +79,83 @@ class eventHandler():
         if event['_event'] != 'NNet.Replay.Tracker.SUnitBornEvent':
             return None
 
-        getUnitsInGame(protocol34835, event, self.unitsInGame) #TODO move the protocol somewhere else
+        # Populate unitsInGame
+        getUnitsInGame(event, self.unitsInGame)
+
+        # Populate Heroes
+        getHero(event, self.heroList)
+
+    def NNet_Replay_Tracker_SUnitDiedEvent(self, event):
+        # Populate Hero Death events
+        if event['_event'] != 'NNet.Replay.Tracker.SUnitDiedEvent':
+            return None
+
+        getHeroDeathsFromReplayEvt(event, self.heroList)
+
+    def NNet_Game_SCameraUpdateEvent(self, event):
+        # Populate Hero Death events based game Events
+        if event['_event'] != 'NNet.Game.SCameraUpdateEvent':
+            return None
+
+        getHeroDeathsFromGameEvt(event, self.heroList)
+
+
+
+def getHero(e, heroList):
+    """
+    Parse the event and looks if the unit created is a hero or not
+    if so, adds a new hero to the heroList
+    """
+
+    # if a new hero unit is born
+    if e['_event'] == 'NNet.Replay.Tracker.SUnitBornEvent' and e['m_unitTypeName'].startswith('Hero'):
+        newHero = HeroUnit()
+        newHero.internalName = e['m_unitTypeName'].split('Hero')[1]
+        newHero.unitIndex = (e['m_unitTagIndex'] << 18) + e['m_unitTagRecycle']
+        newHero.playerId = e['m_upkeepPlayerId']
+
+        heroList[newHero.unitIndex]= newHero
+
+def getHeroDeathsFromReplayEvt(e, heroList):
+    """
+    This function works by reading the specific Replay Tracker Event information
+    Parse the event and looks if a hero unit was destroyed, if so, adds a new entry to the deathList
+    """
+
+    deadUnitIndex = (e['m_unitTagIndex'] << 18) + e['m_unitTagRecycle']
+    if e['_event'] == 'NNet.Replay.Tracker.SUnitDiedEvent' and deadUnitIndex in heroList.keys():
+
+        if e['m_killerUnitTagIndex']:
+            killerUnitIndex = (e['m_killerUnitTagIndex'] << 18) + e['m_killerUnitTagRecycle']
+            heroDeathEvent = {'killerPlayerId': e['m_killerPlayerId'], 'killerUnitIndex': killerUnitIndex}
+            heroList[deadUnitIndex].deathList[int(e['_gameloop']/16)] = heroDeathEvent
+            heroList[deadUnitIndex].deathCount += 1
+        else:
+            # There is a bug that cause m_killerUnitTagIndex and m_killerUnitTagRecycle to be null
+            heroDeathEvent = {'killerPlayerId': e['m_killerPlayerId'], 'killerUnitIndex': None}
+            heroList[deadUnitIndex].deathList[int(e['_gameloop']/16)] = heroDeathEvent
+            heroList[deadUnitIndex].deathCount += 1
+
+def getHeroDeathsFromGameEvt(e, heroList):
+    """
+    This function works by reading the specific Game Event information
+    Parse the event and looks if a there is a NNet.Game.SCameraUpdateEvent with no m_target (None)
+    this only happens when the camera is pointing to the spawn area. It uses the m_userId instead of
+    the unitIndex
+    """
+
+    if e['_event'] == 'NNet.Game.SCameraUpdateEvent' and not e['m_target'] and e['_gameloop'] > 10:
+        # find the hero
+        playerId =  int(e['_userid']['m_userId']) + 1
+        unitIndex = [key for (key, value) in sorted(heroList.items()) if value.playerId == playerId][0]
+        eventTime = int(e['_gameloop']/16)
+
+        if eventTime - int(heroList[unitIndex].deathList.keys()[0]) > 12: # we need this to rule out the first event which is actually tracked
+            heroDeathEvent = {'killerPlayerId': None , 'killerUnitIndex': None} # sadly, we don't know who killed it
+            heroList[unitIndex].deathList[eventTime] = heroDeathEvent # and this is actually the respawn time, not death time
+            heroList[unitIndex].deathCount += 1
+
+
 
 
 def decode_replay(replayFile, eventToDecode=None):
@@ -96,7 +190,10 @@ def processEvents(proto=None, replayFile=None):
                 getattr(eh, event['_event'].replace('.','_'))(event)
 
 
-    print json.dumps(eh.unitsInGame)
+    for index in eh.heroList:
+        print "%s: %s" % (eh.heroList[index].internalName, eh.heroList[index].deathCount)
+        #keys = eh.heroList[hero].deathList.keys()
+        #print eh.unitsInGame[eh.heroList[hero].deathList[keys[0]]['killerUnitIndex']]
 
 
 
@@ -162,7 +259,7 @@ def getTalentSelected(proto, content):
 
     print total
 
-def getUnitsInGame(proto, e, unitsInGame):
+def getUnitsInGame(e, unitsInGame):
 
     if e['_event'] == 'NNet.Replay.Tracker.SUnitBornEvent':
         unitIndex = (e['m_unitTagIndex'] << 18) + e['m_unitTagRecycle']
