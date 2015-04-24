@@ -12,7 +12,7 @@ class Unit():
   def unit_tag_recycle(self):
     return (self.unitTag) & 0x0003ffff
 
-class HeroeUnit(Unit):
+class HeroUnit(Unit):
 
     def __init__(self):
         # General data

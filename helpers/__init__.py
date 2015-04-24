@@ -7,7 +7,7 @@ from models import *
 #def getArmyStr()
 
 
-def getHeroe(e):
+def getHeroes(e, players):
     """
     Parse the event and looks if the unit created is a hero or not
     if so, adds a new hero to the heroList
@@ -15,14 +15,18 @@ def getHeroe(e):
 
     # if a new hero unit is born
     if e['_event'] == 'NNet.Replay.Tracker.SUnitBornEvent' and e['m_unitTypeName'].startswith('Hero'):
-        newHeroe = HeroeUnit()
-        newHeroe.internalName = e['m_unitTypeName'].split('Hero')[1]
-        newHeroe.unitTagIndex = e['m_unitTagIndex']
-        newHeroe.unitTagRecycle = e['m_unitTagRecycle']
-        newHeroe.unitTag = newHeroe.unit_tag()
-        newHeroe.playerId = e['m_upkeepPlayerId']
+        playerId = e['m_upkeepPlayerId'] - 1
 
-        return newHeroe
+        hero = HeroUnit()
+        hero.playerId = playerId
+        hero.name = players[playerId].name
+        hero.team = players[playerId].team
+        hero.internalName = e['m_unitTypeName'][4:]
+        hero.unitTagIndex = e['m_unitTagIndex']
+        hero.unitTagRecycle = e['m_unitTagRecycle']
+        hero.unitTag = hero.unit_tag()
+
+        return hero
 
 
 def getUnitDestruction(e, unitsInGame):

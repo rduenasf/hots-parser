@@ -78,7 +78,7 @@ class Replay():
 
 
         # Populate Heroes
-        heroe = getHeroe(event)
+        heroe = getHeroes(event, self.players)
         if heroe:
           self.heroeList[heroe.unitTag] = heroe
 
