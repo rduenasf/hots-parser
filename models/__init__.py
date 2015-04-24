@@ -71,7 +71,6 @@ class GameUnit():
         self.team = None # The team this unit belongs to
         self.gameLoopsAlive = -1 # -1 means never died.
         self.unitIndex = None
-        self.wasPicked = False # for collectables
 
     def is_map_resource(self):
       return self.internalName in GameUnit._PICKUNITS
