@@ -47,14 +47,7 @@ def processEvents(proto=None, replayFile=None):
 
     for index in eh.unitsInGame:
         if eh.unitsInGame[index].isMapResource():
-            print "%d %s (%d) - created: %d | died: %s | alive: %s | picked? (%s)" \
-                  % (index, eh.unitsInGame[index].internalName,
-                     eh.unitsInGame[index].team,
-                     eh.unitsInGame[index].bornAt,
-                     eh.unitsInGame[index].diedAt,
-                     eh.unitsInGame[index].gameLoopsAlive,
-                     eh.unitsInGame[index].wasPicked
-            )
+            print eh.unitsInGame[index]
 
     #for index in eh.heroList:
         #print "%s: %s" % (eh.heroList[index].internalName, eh.heroList[index].deathCount)

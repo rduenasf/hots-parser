@@ -72,3 +72,7 @@ class GameUnit():
     def isMapResource(self):
       return self.internalName == 'ItemSoulPickup'
 
+
+    def __str__(self):
+      return "%d\t%s\t(%d)\tcreated: %d\tdied: %s\talive: %s\tpicked? (%s)" \
+                  % (self.unitIndex, self.internalName, self.team, self.bornAt, self.diedAt, self.gameLoopsAlive, self.wasPicked )
