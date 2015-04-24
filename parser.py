@@ -2,52 +2,29 @@ __author__ = 'Rodrigo Duenas, Cristian Orellana'
 
 from s2protocol import protocol34835
 from s2protocol.mpyq import mpyq
-from utils import EVENTS
 from events import *
 
 import json
 import sys
 
-def decode_replay(replayFile, eventToDecode=None):
-    """
-    Gets the content of a particular event
-    """
-    if eventToDecode not in EVENTS.keys():
-        print "Error - Unknown event %s" % eventToDecode
-        return -1
-
-    return replayFile.read_file(eventToDecode)
-
-
-def processEvents(proto=None, replayFile=None):
+def processEvents(protocol=None, replayFile=None):
     """"
     This is the main loop, reads a replayFile and applies available decoders (trackerEvents, gameEvents, msgEvents, etc)
     Receives the protocol and the replayFile as an mpyq file object
     """
-    if not proto or not replayFile:
+    if not protocol or not replayFile:
         print "Error - Protocol and replayFire are needed"
         return -1
 
     # Pre parse preparation go here
-    eh = eventHandler()
+    eh = EventHandler(protocol, replayFile)
 
+    eh.process_replay()
 
-    # Parse
+    for unit in eh.units_in_game():
+      if unit.is_map_resource():
+        print unit
 
-    for meta in EVENTS.keys():
-        content = decode_replay(replayFile, meta)
-        events = getattr(proto,EVENTS[meta])(content)
-        for event in events:
-            eh.processEvent(event)
-
-
-    # After parse functions go here
-    getGemPicked(event, eh.unitsInGame)
-
-
-    for index in eh.unitsInGame:
-        if eh.unitsInGame[index].isMapResource():
-            print eh.unitsInGame[index]
 
     #for index in eh.heroList:
         #print "%s: %s" % (eh.heroList[index].internalName, eh.heroList[index].deathCount)

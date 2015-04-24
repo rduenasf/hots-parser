@@ -1,6 +1,12 @@
 from helpers import *
 
-class eventHandler():
+class EventHandler():
+
+    EVENT_FILES = {
+      'replay.game.events': 'decode_replay_game_events',
+      'replay.tracker.events': 'decode_replay_tracker_events'
+    }
+
 
     unitsInGame = {}
     heroActions = {} # this is a dictionary , the key is the hero indexId, the value is a list of tuples
@@ -8,12 +14,28 @@ class eventHandler():
     heroList = {} # key = playerId - content = hero instance
     heroDeathsList = list()
 
-    def processEvent(self, event):
+
+    def __init__(self, protocol, replayFile):
+      self.protocol = protocol
+      self.replayFile = replayFile
+
+    def process_replay(self):
+      for meta in self.EVENT_FILES:
+        contents = self.replayFile.read_file(meta)
+        events = getattr(self.protocol, self.EVENT_FILES[meta])(contents)
+        for event in events:
+          self.process_event(event)
+
+
+    def process_event(self, event):
         event_name = event['_event'].replace('.','_')
 
         if hasattr(self, event_name):
           getattr(self, event_name)(event)
 
+
+    def units_in_game(self):
+      return self.unitsInGame.itervalues()
 
     def NNet_Replay_Tracker_SUnitBornEvent(self, event):
         """
