@@ -3,17 +3,6 @@ from models import *
 import json
 from utils import *
 
-def getGemPicked(unitList):
-    """
-    Gets soul gems that were never picked up
-    This function should run after the events are parsed and the unitList creation/destruction info is populated
-    """
-
-    gemUnitIndexes = [key for (key, value) in sorted(unitList.items()) if value.internalName in GameUnit._PICKUNITS.keys()]
-    for gemIndex in gemUnitIndexes:
-        if unitList[gemIndex].gameLoopsAlive in xrange(0, GameUnit._PICKUNITS[unitList[gemIndex].internalName] - 1):
-            unitList[gemIndex].wasPicked = True
-
 
 
 #def getArmyStr()

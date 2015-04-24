@@ -66,9 +66,9 @@ class GameUnit():
         self.internalName = '' #Unit Name
         self.bornAt = None # Seconds into the game when it was created
         self.bornAtGameLoops = None
+        self.diedAt = None # Seconds into the game when it was destroyed
         self.diedAtGameLoops = None
         self.team = None # The team this unit belongs to
-        self.diedAt = None # Seconds into the game when it was destroyed
         self.gameLoopsAlive = -1 # -1 means never died.
         self.unitIndex = None
         self.wasPicked = False # for collectables
@@ -76,7 +76,10 @@ class GameUnit():
     def is_map_resource(self):
       return self.internalName in GameUnit._PICKUNITS
 
+    def was_picked(self):
+      return self.gameLoopsAlive < GameUnit._PICKUNITS[self.internalName]
+
 
     def __str__(self):
       return "%d\t%s\t(%d)\tcreated: %d\tdied: %s\talive: %s\tpicked? (%s)" \
-                  % (self.unitIndex, self.internalName, self.team, self.bornAt, self.diedAt, self.gameLoopsAlive, self.wasPicked )
+                  % (self.unitIndex, self.internalName, self.team, self.bornAt, self.diedAt, self.gameLoopsAlive, self.was_picked() )

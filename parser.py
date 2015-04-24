@@ -20,11 +20,11 @@ def processEvents(protocol=None, replayFile=None):
 
     eh.process_replay()
 
-    getGemPicked(eh.unitsInGame)
-
     for unit in eh.units_in_game():
       if unit.is_map_resource():
         print unit
+
+    # for unit in
 
 
     #for index in eh.heroList:

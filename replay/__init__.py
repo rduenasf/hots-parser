@@ -37,6 +37,7 @@ class Replay():
     def units_in_game(self):
       return self.unitsInGame.itervalues()
 
+
     def NNet_Replay_Tracker_SUnitBornEvent(self, event):
         """
         This function process the events of the type NNet.Replay.Tracker.SUnitBornEvent
