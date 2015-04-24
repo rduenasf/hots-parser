@@ -22,18 +22,24 @@ def processEvents(protocol=None, replayFile=None):
 
     pickedGemsPerTeam = [0, 0]
 
+    print "\n ==== Units ===="
+
+
     for unit in eh.units_in_game():
-      if unit.team > 0:
+      # if unit.team >= 0 and not unit.is_map_resource():
+      if unit.team == 4:
         print unit
 
       if unit.is_map_resource():
         # print unit
         pickedGemsPerTeam[unit.team] += 1
 
+    print "\n ==== Heroes ===="
+
     for hero in eh.heroes_in_game():
       print hero
 
-    print " ==== Summary ==== \n"
+    print "\n ==== Summary ===="
 
     print "Picked Gems:\t%s" % (pickedGemsPerTeam)
 

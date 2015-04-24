@@ -74,6 +74,8 @@ class GameUnit(Unit):
     _PICKUNITS = {
             'ItemSeedPickup': 150,
             'ItemSoulPickup': 128,
+            'ItemSoulPickupFive': 128,
+            'ItemSoulPickupTwenty': 128,
             'ItemUnderworldPowerup': 150
     }
 
@@ -102,5 +104,5 @@ class GameUnit(Unit):
 
 
     def __str__(self):
-      return "%s\t%s\t(%s)\tcreated: %d\tdied: %s\tlifespan: %s\tpicked? (%s)" \
+      return "%s\t%s\t(%s)\tcreated: %d s\tdied: %s s\tlifespan: %s gls\tpicked? (%s)" \
                   % (self.unitTag, self.internalName, self.team, self.bornAt, self.diedAt, self.gameLoopsAlive, self.was_picked() )
