@@ -24,6 +24,9 @@ def processEvents(protocol=None, replayFile=None):
       if unit.is_map_resource():
         print unit
 
+    for hero in eh.heroes_in_game():
+      print hero
+
     # for unit in
 
 

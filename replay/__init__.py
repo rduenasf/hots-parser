@@ -37,6 +37,8 @@ class Replay():
     def units_in_game(self):
       return self.unitsInGame.itervalues()
 
+    def heroes_in_game(self):
+      return self.heroList.itervalues()
 
     def NNet_Replay_Tracker_SUnitBornEvent(self, event):
         """

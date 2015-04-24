@@ -1,6 +1,18 @@
 __author__ = 'Rodrigo Duenas, Cristian Orellana'
 
-class HeroUnit():
+class Unit():
+  def unit_tag():
+    return (self.unitTagIndex << 18) + self.unitTagRecycle
+
+
+  def unit_tag_index():
+    return (self.unitTag >> 18) & 0x00003fff
+
+
+  def unit_tag_recycle():
+    return (self.unitTag) & 0x0003ffff
+
+class HeroUnit(Unit):
 
     def __init__(self):
         # General data
@@ -27,12 +39,13 @@ class HeroUnit():
 
     def __str__(self):
 
-        return "name: %s\n" \
-              "internalName: %s\n" \
-              "isHuman: %s\n" \
-              "playerId: %s\n" \
-              "team: %s\n" \
-              "unitIndex: %s\n" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitIndex)
+        return "name: %s\t" \
+              "internalName: %s\t" \
+              "isHuman: %s\t" \
+              "playerId: %s\t" \
+              "team: %s\t" \
+              "unitIndex: %s\t" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitIndex)
+
 
 
 class HeroReplay():
@@ -55,7 +68,7 @@ class PlayerUnit():
         id = ''
         realm = ''
 
-class GameUnit():
+class GameUnit(Unit):
     _PICKUNITS = {'ItemSeedPickup': 128,
              'ItemSoulPickup': 150,
              'ItemUnderworldPowerup': 150}
