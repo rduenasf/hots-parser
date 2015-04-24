@@ -33,7 +33,7 @@ class EventLogger:
     def __init__(self):
         self._event_stats = {}
 
-    def log(self, output, event):
+    def log(self, output, event, printable=False):
         # update stats
         if '_event' in event and '_bits' in event:
             stat = self._event_stats.get(event['_event'], [0, 0])
@@ -41,8 +41,8 @@ class EventLogger:
             stat[1] += event['_bits']  # count of bits
             self._event_stats[event['_event']] = stat
         # write structure
-        #pprint.pprint(json.dumps(event), stream=output)
-        print json.dumps(event)
+        if printable:
+          print >> output, '%s\t %s' % (event['_gameloop'], json.dumps(event))
 
     def log_stats(self, output):
         for name, stat in sorted(self._event_stats.iteritems(), key=lambda x: x[1][1]):
@@ -107,18 +107,24 @@ if __name__ == '__main__':
     # Print game events and/or game events stats
     if args.gameevents:
         contents = archive.read_file('replay.game.events')
-        logger.log(sys.stdout, [event for event in protocol.decode_replay_game_events(contents)])
+        for event in protocol.decode_replay_game_events(contents):
+          printable = False
+          logger.log(sys.stdout, event, printable)
 
     # Print message events
     if args.messageevents:
         contents = archive.read_file('replay.message.events')
-        logger.log(sys.stdout, [event for event in protocol.decode_replay_message_events(contents)])
+        for event in protocol.decode_replay_message_events(contents):
+          printable = False
+          logger.log(sys.stdout, event, printable)
 
     # Print tracker events
     if args.trackerevents:
         if hasattr(protocol, 'decode_replay_tracker_events'):
             contents = archive.read_file('replay.tracker.events')
-            logger.log(sys.stdout, [event for event in protocol.decode_replay_tracker_events(contents)])
+            for event in protocol.decode_replay_tracker_events(contents):
+              printable = False
+              logger.log(sys.stdout, event, printable)
 
     # Print attributes events
     if args.attributeevents:
