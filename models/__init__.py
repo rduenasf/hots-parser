@@ -40,13 +40,7 @@ class HeroUnit(Unit):
         self.maxKillSpree = 0 # maximum number of heroes killed after (if ever) die
 
     def __str__(self):
-
-        return "%15s\t" \
-               "%15s\t" \
-               "%15s\t" \
-               "%15s\t" \
-               "%15s\t" \
-               "%15s\t" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitTag)
+        return "%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitTag)
 
 
 

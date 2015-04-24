@@ -42,7 +42,7 @@ def processEvents(protocol=None, replayFile=None):
         pickedGemsPerTeam[unit.team] += 1
 
     print "\n ==== Heroes ===="
-    print "%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % ("name", "internalName", "isHuman", "playerId", "team", "unitTag")
+    print "%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % ("Name", "InternalName", "IsHuman", "PlayerId", "Team", "UnitTag")
 
     for hero in eh.heroes_in_game():
       print hero
