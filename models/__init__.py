@@ -85,6 +85,9 @@ class GameUnit(Unit):
             'ItemUnderworldPowerup': 150
     }
 
+    _MERCUNITS = {
+            'caca': 1
+    }
 
     def __init__(self):
         # General Data
@@ -107,6 +110,11 @@ class GameUnit(Unit):
         return self.gameLoopsAlive < GameUnit._PICKUNITS[self.internalName]
       else:
         return False
+
+    def is_mercenary(self):
+        return self.internalName in GameUnit._MERCUNITS
+
+
 
 
     def __str__(self):
