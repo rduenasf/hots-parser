@@ -1,6 +1,6 @@
 __author__ = 'Rodrigo Duenas, Cristian Orellana'
 
-from s2protocol import protocol15405, protocol34835
+from s2protocol import protocol34835
 from s2protocol.mpyq import mpyq
 from utils import EVENTS
 from events import *
@@ -143,7 +143,6 @@ def getTalentSelected(proto, content):
 # players = []
 # replayData = HeroReplay()
 #
-# p = protocol15405
 p2 = protocol34835
 replay = mpyq.MPQArchive(sys.argv[1])
 processEvents(p2, replay)
