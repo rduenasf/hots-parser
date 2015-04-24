@@ -1,18 +1,18 @@
 __author__ = 'Rodrigo Duenas, Cristian Orellana'
 
 class Unit():
-  def unit_tag():
+  def unit_tag(self):
     return (self.unitTagIndex << 18) + self.unitTagRecycle
 
 
-  def unit_tag_index():
+  def unit_tag_index(self):
     return (self.unitTag >> 18) & 0x00003fff
 
 
-  def unit_tag_recycle():
+  def unit_tag_recycle(self):
     return (self.unitTag) & 0x0003ffff
 
-class HeroUnit(Unit):
+class HeroeUnit(Unit):
 
     def __init__(self):
         # General data
@@ -21,7 +21,9 @@ class HeroUnit(Unit):
         self.isHuman = False
         self.playerId = None
         self.team = None
-        self.unitIndex = [] # list of known unitIndex for the hero
+        self.unitTag = None
+        self.unitTagRecycle = None
+        self.unitTagIndex = None
 
         # Metrics
         self.deathCount = 0
@@ -44,7 +46,7 @@ class HeroUnit(Unit):
               "isHuman: %s\t" \
               "playerId: %s\t" \
               "team: %s\t" \
-              "unitIndex: %s\t" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitIndex)
+              "unitTag: %s\t" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitTag)
 
 
 
@@ -69,9 +71,11 @@ class PlayerUnit():
         realm = ''
 
 class GameUnit(Unit):
-    _PICKUNITS = {'ItemSeedPickup': 128,
-             'ItemSoulPickup': 150,
-             'ItemUnderworldPowerup': 150}
+    _PICKUNITS = {
+            'ItemSeedPickup': 128,
+            'ItemSoulPickup': 150,
+            'ItemUnderworldPowerup': 150
+    }
 
 
     def __init__(self):
@@ -83,7 +87,9 @@ class GameUnit(Unit):
         self.diedAtGameLoops = None
         self.team = None # The team this unit belongs to
         self.gameLoopsAlive = -1 # -1 means never died.
-        self.unitIndex = None
+        self.unitTag = None
+        self.unitTagRecycle = None
+        self.unitTagIndex = None
 
     def is_map_resource(self):
       return self.internalName in GameUnit._PICKUNITS
@@ -94,4 +100,4 @@ class GameUnit(Unit):
 
     def __str__(self):
       return "%d\t%s\t(%d)\tcreated: %d\tdied: %s\talive: %s\tpicked? (%s)" \
-                  % (self.unitIndex, self.internalName, self.team, self.bornAt, self.diedAt, self.gameLoopsAlive, self.was_picked() )
+                  % (self.unitTag, self.internalName, self.team, self.bornAt, self.diedAt, self.gameLoopsAlive, self.was_picked() )

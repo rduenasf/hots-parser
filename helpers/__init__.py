@@ -8,7 +8,7 @@ from utils import *
 #def getArmyStr()
 
 
-def getHero(e, heroList):
+def getHeroe(e):
     """
     Parse the event and looks if the unit created is a hero or not
     if so, adds a new hero to the heroList
@@ -16,12 +16,15 @@ def getHero(e, heroList):
 
     # if a new hero unit is born
     if e['_event'] == 'NNet.Replay.Tracker.SUnitBornEvent' and e['m_unitTypeName'].startswith('Hero'):
-        newHero = HeroUnit()
-        newHero.internalName = e['m_unitTypeName'].split('Hero')[1]
-        newHero.unitIndex = (e['m_unitTagIndex'] << 18) + e['m_unitTagRecycle']
-        newHero.playerId = e['m_upkeepPlayerId']
+        newHeroe = HeroeUnit()
+        newHeroe.internalName = e['m_unitTypeName'].split('Hero')[1]
+        newHeroe.unitTagIndex = e['m_unitTagIndex']
+        newHeroe.unitTagRecycle = e['m_unitTagRecycle']
+        newHeroe.unitTag = newHeroe.unit_tag()
+        newHeroe.playerId = e['m_upkeepPlayerId']
 
-        heroList[newHero.unitIndex]= newHero
+        return newHeroe
+
 
 def getUnitDestruction(e, unitsInGame):
     """
@@ -76,20 +79,22 @@ def getHeroDeathsFromGameEvt(e, heroList):
                 heroList[unitIndex].deathList[eventTime] = heroDeathEvent # and this is actually the respawn time, not death time
                 heroList[unitIndex].deathCount += 1
 
-def getUnitsInGame(e, unitsInGame):
+def getUnitsInGame(e):
 
     """
     Stores all non-hero units
     """
     if e['_event'] == 'NNet.Replay.Tracker.SUnitBornEvent' and not e['m_unitTypeName'].startswith('Hero'):
-        unitIndex = (e['m_unitTagIndex'] << 18) + e['m_unitTagRecycle']
         unit = GameUnit()
-        unit.unitIndex = unitIndex
+        unit.unitTagIndex = e['m_unitTagIndex']
+        unit.unitTagRecycle = e['m_unitTagRecycle']
+        unit.unitTag = unit.unit_tag()
         unit.bornAt = int(e['_gameloop']/16)
         unit.bornAtGameLoops = e['_gameloop']
         unit.internalName = e['m_unitTypeName']
         unit.team = e['m_upkeepPlayerId'] - 10
-        unitsInGame[unitIndex] = unit
+
+        return unit
 
 
 def getTalentSelected(proto, content):
