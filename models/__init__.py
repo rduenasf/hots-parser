@@ -102,5 +102,5 @@ class GameUnit(Unit):
 
 
     def __str__(self):
-      return "%s\t%s\t(%s)\tcreated: %d\tdied: %s\talive: %s\tpicked? (%s)" \
+      return "%s\t%s\t(%s)\tcreated: %d\tdied: %s\tlifespan: %s\tpicked? (%s)" \
                   % (self.unitTag, self.internalName, self.team, self.bornAt, self.diedAt, self.gameLoopsAlive, self.was_picked() )
