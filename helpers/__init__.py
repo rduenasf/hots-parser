@@ -92,7 +92,7 @@ def getUnitsInGame(e):
         unit.bornAt = int(e['_gameloop']/16)
         unit.bornAtGameLoops = e['_gameloop']
         unit.internalName = e['m_unitTypeName']
-        unit.team = e['m_upkeepPlayerId'] - 10
+        unit.team = e['m_upkeepPlayerId'] - 11
 
         return unit
 

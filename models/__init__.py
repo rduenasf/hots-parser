@@ -72,8 +72,8 @@ class PlayerUnit():
 
 class GameUnit(Unit):
     _PICKUNITS = {
-            'ItemSeedPickup': 128,
-            'ItemSoulPickup': 150,
+            'ItemSeedPickup': 150,
+            'ItemSoulPickup': 128,
             'ItemUnderworldPowerup': 150
     }
 
@@ -95,9 +95,12 @@ class GameUnit(Unit):
       return self.internalName in GameUnit._PICKUNITS
 
     def was_picked(self):
-      return self.gameLoopsAlive < GameUnit._PICKUNITS[self.internalName]
+      if hasattr(GameUnit._PICKUNITS, self.internalName):
+        return self.gameLoopsAlive < GameUnit._PICKUNITS[self.internalName]
+      else:
+        return False
 
 
     def __str__(self):
-      return "%d\t%s\t(%d)\tcreated: %d\tdied: %s\talive: %s\tpicked? (%s)" \
+      return "%s\t%s\t(%s)\tcreated: %d\tdied: %s\talive: %s\tpicked? (%s)" \
                   % (self.unitTag, self.internalName, self.team, self.bornAt, self.diedAt, self.gameLoopsAlive, self.was_picked() )
