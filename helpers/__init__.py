@@ -114,65 +114,6 @@ def decode_replay(replayFile, eventToDecode=None):
     return replayFile.read_file(eventToDecode)
 
 
-def processEvents(proto=None, replayFile=None):
-    """"
-    This is the main loop, reads a replayFile and applies available decoders (trackerEvents, gameEvents, msgEvents, etc)
-    Receives the protocol and the replayFile as an mpyq file object
-    """
-    if not proto or not replayFile:
-        print "Error - Protocol and replayFire are needed"
-        return -1
-
-    # Pre parse preparation go here
-    eh = eventHandler()
-
-
-    # Parse
-
-    for meta in EVENTS.keys():
-        content = decode_replay(replayFile, meta)
-        events = getattr(proto,EVENTS[meta])(content)
-        for event in events:
-            if event['_event'] in eh.IMPLEMENTED:
-                getattr(eh, event['_event'].replace('.','_'))(event)
-
-
-    # After parse functions go here
-    getGemPicked(event, eh.unitsInGame)
-
-
-
-    gems = 0
-    for index in eh.unitsInGame:
-        if eh.unitsInGame[index].team < 0:
-            print "%d %s (%d) - created: %d | died: %s | alive: %s | picked? (%s)" \
-              % (index, eh.unitsInGame[index].internalName,
-                 eh.unitsInGame[index].team,
-                 eh.unitsInGame[index].bornAt,
-                 eh.unitsInGame[index].diedAt,
-                 eh.unitsInGame[index].gameLoopsAlive,
-                 eh.unitsInGame[index].wasPicked
-                )
-        if eh.unitsInGame[index].internalName in PICKUNITS:
-            print "%d %s (%d) - created: %d | died: %s | alive: %s | picked? (%s)" \
-              % (index, eh.unitsInGame[index].internalName,
-                 eh.unitsInGame[index].team,
-                 eh.unitsInGame[index].bornAt,
-                 eh.unitsInGame[index].diedAt,
-                 eh.unitsInGame[index].gameLoopsAlive,
-                 eh.unitsInGame[index].wasPicked
-                )
-        gems += 1
-        if index == 15990785:
-            print eh.unitsInGame[index].internalName
-    print gems
-
-    #for index in eh.heroList:
-        #print "%s: %s" % (eh.heroList[index].internalName, eh.heroList[index].deathCount)
-        #keys = eh.heroList[hero].deathList.keys()
-        #print eh.unitsInGame[eh.heroList[hero].deathList[keys[0]]['killerUnitIndex']]
-
-
 
 def getHeaders(proto, replayFile):
     return proto.decode_replay_header(replayFile.header['user_data_header']['content'])
