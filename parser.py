@@ -18,6 +18,13 @@ def processEvents(protocol=None, replayFile=None):
     # Pre parse preparation go here
     eh = Replay(protocol, replayFile)
 
+    eh.process_replay_details()
+
+    print "\n === Players ==="
+
+    for player in eh.get_players_in_game():
+      print player
+
     eh.process_replay()
 
     pickedGemsPerTeam = [0, 0]
