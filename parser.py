@@ -27,12 +27,13 @@ def processEvents(protocol=None, replayFile=None):
 
     for unit in eh.units_in_game():
       # if unit.team >= 0 and not unit.is_map_resource():
-      if unit.team == 4:
+      if unit.team == -11:
         print unit
 
-      if unit.is_map_resource():
+      #if unit.is_map_resource():
         # print unit
-        pickedGemsPerTeam[unit.team] += 1
+      #  print unit.internalName
+        #pickedGemsPerTeam[unit.team] += 1
 
     print "\n ==== Heroes ===="
 

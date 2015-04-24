@@ -95,6 +95,12 @@ class GameUnit(Unit):
         self.unitTag = None
         self.unitTagRecycle = None
         self.unitTagIndex = None
+        self.killerTeam = None
+        self.killerTag = None
+        self.killerTagIndex = None
+        self.killerTagRecycle = None
+        self.killerPlayerId = None
+
 
     def is_map_resource(self):
       return self.internalName in GameUnit._PICKUNITS
@@ -112,5 +118,5 @@ class GameUnit(Unit):
 
 
     def __str__(self):
-      return "%s\t%s\t(%s)\tcreated: %d s\tdied: %s s\tlifespan: %s gls\tpicked? (%s)" \
-                  % (self.unitTag, self.internalName, self.team, self.bornAt, self.diedAt, self.gameLoopsAlive, self.was_picked() )
+      return "%s\t%s\t(%s)\tcreated: %d s\tdied: %s s\tlifespan: %s gls\tpicked? (%s)\tkilledby: %s" \
+                  % (self.unitTag, self.internalName, self.team, self.bornAt, self.diedAt, self.gameLoopsAlive, self.was_picked(), self.killerPlayerId)

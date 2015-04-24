@@ -35,6 +35,8 @@ def getUnitDestruction(e, unitsInGame):
             unitsInGame[deadUnitIndex].diedAt = int(e['_gameloop']/16)
             unitsInGame[deadUnitIndex].diedAtGameLoops = e['_gameloop']
             unitsInGame[deadUnitIndex].gameLoopsAlive = unitsInGame[deadUnitIndex].diedAtGameLoops - unitsInGame[deadUnitIndex].bornAtGameLoops
+            unitsInGame[deadUnitIndex].killerPlayerId = e['m_killerPlayerId']
+
         except:
            pass
 
