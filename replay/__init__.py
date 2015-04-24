@@ -11,7 +11,7 @@ class Replay():
     unitsInGame = {}
     heroActions = {} # this is a dictionary , the key is the hero indexId, the value is a list of tuples
                     # (secsInGame, action)
-    heroeList = {} # key = playerId - content = hero instance
+    heroList = {} # key = playerId - content = hero instance
     heroDeathsList = list()
 
     mapName = ''
@@ -62,7 +62,7 @@ class Replay():
       return self.unitsInGame.itervalues()
 
     def heroes_in_game(self):
-      return self.heroeList.itervalues()
+      return self.heroList.itervalues()
 
     def NNet_Replay_Tracker_SUnitBornEvent(self, event):
         """
@@ -78,16 +78,16 @@ class Replay():
 
 
         # Populate Heroes
-        heroe = getHeroes(event, self.players)
-        if heroe:
-          self.heroeList[heroe.unitTag] = heroe
+        hero = getHeroes(event, self.players)
+        if hero:
+          self.heroList[hero.playerId] = hero
 
     def NNet_Replay_Tracker_SUnitDiedEvent(self, event):
         # Populate Hero Death events
         if event['_event'] != 'NNet.Replay.Tracker.SUnitDiedEvent':
             return None
 
-        getHeroDeathsFromReplayEvt(event, self.heroeList)
+        getHeroDeathsFromReplayEvt(event, self.heroList)
         getUnitDestruction(event, self.unitsInGame)
 
 
@@ -96,4 +96,4 @@ class Replay():
         if event['_event'] != 'NNet.Game.SCameraUpdateEvent':
             return None
 
-        getHeroDeathsFromGameEvt(event, self.heroeList)
+        getHeroDeathsFromGameEvt(event, self.heroList)

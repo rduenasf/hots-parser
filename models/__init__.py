@@ -41,12 +41,12 @@ class HeroUnit(Unit):
 
     def __str__(self):
 
-        return "name: %s\t" \
-              "internalName: %s\t" \
-              "isHuman: %s\t" \
-              "playerId: %s\t" \
-              "team: %s\t" \
-              "unitTag: %s\t" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitTag)
+        return "%15s\t" \
+               "%15s\t" \
+               "%15s\t" \
+               "%15s\t" \
+               "%15s\t" \
+               "%15s\t" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitTag)
 
 
 
