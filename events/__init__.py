@@ -1,6 +1,6 @@
 from helpers import *
 
-class EventHandler():
+class Replay():
 
     EVENT_FILES = {
       'replay.game.events': 'decode_replay_game_events',

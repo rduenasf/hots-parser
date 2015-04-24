@@ -1,5 +1,6 @@
 
 from models import *
+import json
 
 def getGemPicked(e, unitList):
     """
@@ -98,3 +99,67 @@ def getUnitsInGame(e, unitsInGame):
         unit.internalName = e['m_unitTypeName']
         unit.team = e['m_upkeepPlayerId'] - 10
         unitsInGame[unitIndex] = unit
+
+
+
+def getHeaders(proto, replayFile):
+    return proto.decode_replay_header(replayFile.header['user_data_header']['content'])
+
+
+def toJson(proto, content):
+    eventList = []
+    excludeList = ['NNet.Game.SBankFileEvent', 'NNet.Game.SBankKeyEvent', 'NNet.Game.SBankSectionEvent',
+     'NNet.Game.SBankSignatureEvent', 'NNet.Game.SCameraUpdateEvent', 'NNet.Game.STriggerCutsceneBookmarkFiredEvent',
+     'NNet.Game.STriggerCutsceneEndSceneFiredEvent',
+     'NNet.Game.STriggerSkippedEvent',
+     'NNet.Game.STriggerSoundLengthSyncEvent',
+     'NNet.Game.STriggerSoundOffsetEvent',
+     'NNet.Game.STriggerTransmissionCompleteEvent',
+     'NNet.Game.STriggerTransmissionOffsetEvent',
+     'NNet.Game.SUserFinishedLoadingSyncEvent',
+     'NNet.Game.SUserFinishedLoadingSyncEvent', 'NNet.Game.SCommandManagerStateEvent', 'NNet.Game.SCmdUpdateTargetPointEvent']
+    total = 0
+    events = proto.decode_replay_game_events(content)
+    for e in events:
+        eventList.append(e)
+        # total += 1
+        # if e['_event'] in excludeList or e['_gameloop'] == 0:
+        #     pass
+        # else:
+        #     eventList.append(e)
+
+    print total
+    print len(eventList)
+    print json.dumps(eventList)
+
+
+
+def lol(proto, content):
+    trackerEvents = proto.decode_replay_tracker_events(content)
+    for t in trackerEvents:
+        if t['_event'] == 'NNet.Replay.Tracker.SPlayerStatsEvent':
+            for metric in t['m_stats'].keys():
+                if t['m_stats'][metric] != 0:
+                    print "for %s %d" % (metric, t['m_stats'][metric])
+
+
+def eventsPerType(proto, content):
+    eventsData = {}
+    events = proto.decode_replay_game_events(content)
+    for e in events:
+        stats = eventsData.get(e['_event'], 0)
+        stats += 1
+        eventsData[e['_event']] = stats
+
+    print json.dumps(eventsData)
+
+
+def getTalentSelected(proto, content):
+    total = 0
+    talentSelectEvents = proto.decode_replay_game_events(content)
+    for tse in talentSelectEvents:
+        if tse['_event'] == 'NNet.Game.SHeroTalentTreeSelectedEvent':
+            print tse
+            total += 1
+
+    print total
