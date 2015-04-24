@@ -56,7 +56,7 @@ class Replay():
         # Populate Heroes
         heroe = getHeroe(event)
         if heroe:
-          self.heroeList[heroe.unitTag]= heroe
+          self.heroeList[heroe.unitTag] = heroe
 
     def NNet_Replay_Tracker_SUnitDiedEvent(self, event):
         # Populate Hero Death events
