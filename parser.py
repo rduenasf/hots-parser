@@ -143,9 +143,10 @@ def getTalentSelected(proto, content):
 # players = []
 # replayData = HeroReplay()
 #
-p2 = protocol34835
-replay = mpyq.MPQArchive(sys.argv[1])
-processEvents(p2, replay)
+
+if __name__ == "__main__":
+  replay = mpyq.MPQArchive(sys.argv[1])
+  processEvents(protocol34835, replay)
 
 
 # contents = replay.read_file('replay.game.events')
