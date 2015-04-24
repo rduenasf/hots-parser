@@ -7,3 +7,6 @@ EVENTS = {'replay.game.events': 'decode_replay_game_events',
 
 HEROACTIONS = [] # empty = ALL
 MAP_ARMY = {'Town'}
+PICKUNITS = {'ItemSeedPickup': 128,
+             'ItemSoulPickup': 150,
+             'ItemUnderworldPowerup': 150}
