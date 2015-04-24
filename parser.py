@@ -2,10 +2,9 @@ __author__ = 'Rodrigo Duenas, Cristian Orellana'
 
 from s2protocol import protocol34835
 from s2protocol.mpyq import mpyq
-from events import *
-
-import json
+from replay import *
 import sys
+import argparse
 
 def processEvents(protocol=None, replayFile=None):
     """"
@@ -21,6 +20,8 @@ def processEvents(protocol=None, replayFile=None):
 
     eh.process_replay()
 
+    getGemPicked(eh.unitsInGame)
+
     for unit in eh.units_in_game():
       if unit.is_map_resource():
         print unit
@@ -34,5 +35,9 @@ def processEvents(protocol=None, replayFile=None):
 
 
 if __name__ == "__main__":
-  replay = mpyq.MPQArchive(sys.argv[1])
-  processEvents(protocol34835, replay)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('replay_file', help='.StormReplay file to load')
+    args = parser.parse_args()
+
+    replay = mpyq.MPQArchive(args.replay_file)
+    processEvents(protocol34835, replay)

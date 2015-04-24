@@ -56,7 +56,10 @@ class PlayerUnit():
         realm = ''
 
 class GameUnit():
-    _MAP_RESOURCE_UNITS = ('ItemSoulPickup')
+    _PICKUNITS = {'ItemSeedPickup': 128,
+             'ItemSoulPickup': 150,
+             'ItemUnderworldPowerup': 150}
+
 
     def __init__(self):
         # General Data
@@ -71,7 +74,7 @@ class GameUnit():
         self.wasPicked = False # for collectables
 
     def is_map_resource(self):
-      return self.internalName in GameUnit._MAP_RESOURCE_UNITS
+      return self.internalName in GameUnit._PICKUNITS
 
 
     def __str__(self):

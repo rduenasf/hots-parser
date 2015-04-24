@@ -4,6 +4,6 @@ __author__ = 'Rodrigo Duenas, Cristian Orellana'
 # The key is the event name and the value is the s2protocol's function used to decode it
 HEROACTIONS = [] # empty = ALL
 MAP_ARMY = {'Town'}
-PICKUNITS = {'ItemSeedPickup': 128,
-             'ItemSoulPickup': 150,
-             'ItemUnderworldPowerup': 150}
+
+# PICKUNITS stores the name of the pick unit as the key and the max duration in gameloops
+# of the unit as the dict value

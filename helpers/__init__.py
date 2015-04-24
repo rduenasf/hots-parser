@@ -1,16 +1,17 @@
 
 from models import *
 import json
+from utils import *
 
-def getGemPicked(e, unitList):
+def getGemPicked(unitList):
     """
     Gets soul gems that were never picked up
     This function should run after the events are parsed and the unitList creation/destruction info is populated
     """
 
-    gemUnitIndexes = [key for (key, value) in sorted(unitList.items()) if value.internalName == 'ItemSoulPickup']
+    gemUnitIndexes = [key for (key, value) in sorted(unitList.items()) if value.internalName in GameUnit._PICKUNITS.keys()]
     for gemIndex in gemUnitIndexes:
-        if unitList[gemIndex].gameLoopsAlive in xrange(0,127):
+        if unitList[gemIndex].gameLoopsAlive in xrange(0, GameUnit._PICKUNITS[unitList[gemIndex].internalName] - 1):
             unitList[gemIndex].wasPicked = True
 
 
@@ -80,10 +81,11 @@ def getHeroDeathsFromGameEvt(e, heroList):
         unitIndex = [key for (key, value) in sorted(heroList.items()) if value.playerId == playerId][0]
         eventTime = int(e['_gameloop']/16)
 
-        if eventTime - int(heroList[unitIndex].deathList.keys()[0]) > 12: # we need this to rule out the first event which is actually tracked
-            heroDeathEvent = {'killerPlayerId': None , 'killerUnitIndex': None} # sadly, we don't know who killed it
-            heroList[unitIndex].deathList[eventTime] = heroDeathEvent # and this is actually the respawn time, not death time
-            heroList[unitIndex].deathCount += 1
+        if len(heroList[unitIndex].deathList.keys()) > 0:
+            if eventTime - int(heroList[unitIndex].deathList.keys()[0]) > 12: # we need this to rule out the first event which is actually tracked
+                heroDeathEvent = {'killerPlayerId': None , 'killerUnitIndex': None} # sadly, we don't know who killed it
+                heroList[unitIndex].deathList[eventTime] = heroDeathEvent # and this is actually the respawn time, not death time
+                heroList[unitIndex].deathCount += 1
 
 def getUnitsInGame(e, unitsInGame):
 
@@ -99,6 +101,76 @@ def getUnitsInGame(e, unitsInGame):
         unit.internalName = e['m_unitTypeName']
         unit.team = e['m_upkeepPlayerId'] - 10
         unitsInGame[unitIndex] = unit
+
+
+def decode_replay(replayFile, eventToDecode=None):
+    """
+    Gets the content of a particular event
+    """
+    if eventToDecode not in EVENTS.keys():
+        print "Error - Unknown event %s" % eventToDecode
+        return -1
+
+    return replayFile.read_file(eventToDecode)
+
+
+def processEvents(proto=None, replayFile=None):
+    """"
+    This is the main loop, reads a replayFile and applies available decoders (trackerEvents, gameEvents, msgEvents, etc)
+    Receives the protocol and the replayFile as an mpyq file object
+    """
+    if not proto or not replayFile:
+        print "Error - Protocol and replayFire are needed"
+        return -1
+
+    # Pre parse preparation go here
+    eh = eventHandler()
+
+
+    # Parse
+
+    for meta in EVENTS.keys():
+        content = decode_replay(replayFile, meta)
+        events = getattr(proto,EVENTS[meta])(content)
+        for event in events:
+            if event['_event'] in eh.IMPLEMENTED:
+                getattr(eh, event['_event'].replace('.','_'))(event)
+
+
+    # After parse functions go here
+    getGemPicked(event, eh.unitsInGame)
+
+
+
+    gems = 0
+    for index in eh.unitsInGame:
+        if eh.unitsInGame[index].team < 0:
+            print "%d %s (%d) - created: %d | died: %s | alive: %s | picked? (%s)" \
+              % (index, eh.unitsInGame[index].internalName,
+                 eh.unitsInGame[index].team,
+                 eh.unitsInGame[index].bornAt,
+                 eh.unitsInGame[index].diedAt,
+                 eh.unitsInGame[index].gameLoopsAlive,
+                 eh.unitsInGame[index].wasPicked
+                )
+        if eh.unitsInGame[index].internalName in PICKUNITS:
+            print "%d %s (%d) - created: %d | died: %s | alive: %s | picked? (%s)" \
+              % (index, eh.unitsInGame[index].internalName,
+                 eh.unitsInGame[index].team,
+                 eh.unitsInGame[index].bornAt,
+                 eh.unitsInGame[index].diedAt,
+                 eh.unitsInGame[index].gameLoopsAlive,
+                 eh.unitsInGame[index].wasPicked
+                )
+        gems += 1
+        if index == 15990785:
+            print eh.unitsInGame[index].internalName
+    print gems
+
+    #for index in eh.heroList:
+        #print "%s: %s" % (eh.heroList[index].internalName, eh.heroList[index].deathCount)
+        #keys = eh.heroList[hero].deathList.keys()
+        #print eh.unitsInGame[eh.heroList[hero].deathList[keys[0]]['killerUnitIndex']]
 
 
 
@@ -163,3 +235,4 @@ def getTalentSelected(proto, content):
             total += 1
 
     print total
+
