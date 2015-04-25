@@ -72,15 +72,25 @@ class PlayerUnit():
 
 class GameUnit(Unit):
     _PICKUNITS = {
-            'ItemSeedPickup': 150,
+            #'ItemSeedPickup': 150,
             'ItemSoulPickup': 128,
             'ItemSoulPickupFive': 128,
             'ItemSoulPickupTwenty': 128,
-            'ItemUnderworldPowerup': 150
+            'ItemUnderworldPowerup': 150,
+            'RegenGlobe': 128
     }
 
-    _MERCUNITS = {
-            'caca': 1
+    _MERCUNITSNPC = { # Key is the name, value is the str multiplier
+        # Garden Merc units
+            'MercDefenderSiegeGiant': 2,
+            'MercDefenderMeleeOgre': 1,
+            'MercDefenderRangedOgre': 1
+    }
+
+    _MERCUNITSTEAM = {
+        'MercLanerMeleeOgre': 1,
+        'MercLanerSiegeGiant': 2,
+        'MercLanerRangedOgre': 1
     }
 
     def __init__(self):
@@ -106,13 +116,13 @@ class GameUnit(Unit):
       return self.internalName in GameUnit._PICKUNITS
 
     def was_picked(self):
-      if hasattr(GameUnit._PICKUNITS, self.internalName):
+      if self.internalName in GameUnit._PICKUNITS:
         return self.gameLoopsAlive < GameUnit._PICKUNITS[self.internalName]
       else:
         return False
 
     def is_mercenary(self):
-        return self.internalName in GameUnit._MERCUNITS
+        return self.internalName in GameUnit._MERCUNITSNPC
 
 
 

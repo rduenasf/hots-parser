@@ -24,11 +24,13 @@ def processEvents(protocol=None, replayFile=None):
 
     print "\n ==== Units ===="
 
-
+    caca = set()
     for unit in eh.units_in_game():
-      # if unit.team >= 0 and not unit.is_map_resource():
-      if unit.team == -11:
-        print unit
+        if unit.team == 1 and unit.internalName.startswith('Merc'):
+            caca.add(unit.internalName)
+        #if unit.is_mercenary():
+
+    print caca
 
       #if unit.is_map_resource():
         # print unit
