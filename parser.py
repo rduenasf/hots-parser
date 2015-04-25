@@ -12,7 +12,7 @@ def processEvents(protocol=None, replayFile=None):
     Receives the protocol and the replayFile as an mpyq file object
     """
     if not protocol or not replayFile:
-        print "Error - Protocol and replayFire are needed"
+        print "Error - Protocol and replayFile are needed"
         return -1
 
     # Pre parse preparation go here

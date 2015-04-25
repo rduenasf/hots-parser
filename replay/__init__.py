@@ -1,5 +1,5 @@
 from helpers import *
-import datetime
+
 
 class Replay():
 
@@ -29,7 +29,7 @@ class Replay():
       details = self.protocol.decode_replay_details(contents)
 
       self.replayInfo.map = details['m_title']
-      self.replayInfo.startTime = datetime.datetime.fromtimestamp(int((details['m_timeUTC']/10000000) - 11644473600)).strftime('%Y-%m-%d %H:%M:%S')
+      self.replayInfo.startTime = win_timestamp_to_date(details['m_timeUTC'])
 
 
       self.players = {}

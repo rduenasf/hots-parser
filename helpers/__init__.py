@@ -1,10 +1,16 @@
 
 from models import *
-
+import datetime
 
 
 
 #def getArmyStr()
+
+def win_timestamp_to_date(timestamp=None, date_format='%Y-%m-%d %H:%M:%S'):
+    if timestamp:
+        return datetime.datetime.fromtimestamp(int((timestamp/10000000) - 11644473600)).strftime(date_format)
+    else:
+        return None
 
 
 def getHeroes(e, players):
