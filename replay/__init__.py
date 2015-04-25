@@ -1,4 +1,5 @@
 from helpers import *
+import datetime
 
 class Replay():
 
@@ -7,6 +8,7 @@ class Replay():
       'replay.tracker.events': 'decode_replay_tracker_events'
     }
 
+    replayInfo = HeroReplay()
 
     unitsInGame = {}
     heroActions = {} # this is a dictionary , the key is the hero indexId, the value is a list of tuples
@@ -26,8 +28,9 @@ class Replay():
       contents = self.replayFile.read_file('replay.details')
       details = self.protocol.decode_replay_details(contents)
 
-      self.mapName = details['m_title']
-      self.time = details['m_timeUTC']
+      self.replayInfo.map = details['m_title']
+      self.replayInfo.startTime = datetime.datetime.fromtimestamp(int((details['m_timeUTC']/10000000) - 11644473600)).strftime('%Y-%m-%d %H:%M:%S')
+
 
       self.players = {}
 
@@ -37,6 +40,12 @@ class Replay():
         hero = player['m_hero']
         name = player['m_name']
         self.players[player['m_workingSetSlotId']] = Player(id, team, name, hero)
+
+
+    def process_replay_header(self):
+        contents = self.replayFile.header['user_data_header']['content']
+        header = self.protocol.decode_replay_header(contents)
+        self.replayInfo.duration = header['m_elapsedGameLoops']
 
 
     def get_players_in_game(self):

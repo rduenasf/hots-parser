@@ -47,11 +47,17 @@ class HeroUnit(Unit):
 class HeroReplay():
     def __init__(self):
         # General Data
-        map = ''
-        startTime = None # UTC
-        duration = None # in seconds
-        speed = None
+        self.map = ''
+        self.startTime = None # UTC
+        self.duration = None # in gameloops
+        self.speed = None
 
+    def __str__(self):
+        return "Title: %s\nStarted at: %s\nDuration (gl): %s\nSpeed: %s" % (self.map,
+        self.startTime,
+        self.duration,
+        self.speed
+      )
 
 
 

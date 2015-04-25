@@ -19,6 +19,11 @@ def processEvents(protocol=None, replayFile=None):
     eh = Replay(protocol, replayFile)
 
     eh.process_replay_details()
+    eh.process_replay_header()
+
+    print "\n === Map Info ==="
+
+    print eh.replayInfo
 
     print "\n === Players ==="
 
@@ -28,16 +33,19 @@ def processEvents(protocol=None, replayFile=None):
     eh.process_replay()
 
     pickedGemsPerTeam = [0, 0]
+    armyStr = {} # key = team, value = dict with key = seconds and value = armystr
+
+
+
 
     print "\n ==== Units ===="
 
-    caca = set()
-    for unit in eh.units_in_game():
-        if unit.team == 1 and unit.internalName.startswith('Merc'):
-            caca.add(unit.internalName)
-        #if unit.is_mercenary():
 
-    print caca
+
+    for unit in eh.units_in_game():
+        armyStr[unit.team] = {unit}
+        print unit
+
 
       #if unit.is_map_resource():
         # print unit
