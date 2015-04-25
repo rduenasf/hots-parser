@@ -12,7 +12,7 @@ class Unit():
   def unit_tag_recycle(self):
     return (self.unitTag) & 0x0003ffff
 
-class HeroeUnit(Unit):
+class HeroUnit(Unit):
 
     def __init__(self):
         # General data
@@ -40,13 +40,7 @@ class HeroeUnit(Unit):
         self.maxKillSpree = 0 # maximum number of heroes killed after (if ever) die
 
     def __str__(self):
-
-        return "name: %s\t" \
-              "internalName: %s\t" \
-              "isHuman: %s\t" \
-              "playerId: %s\t" \
-              "team: %s\t" \
-              "unitTag: %s\t" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitTag)
+        return "%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitTag)
 
 
 
@@ -61,14 +55,20 @@ class HeroReplay():
 
 
 
-class PlayerUnit():
+class Player():
 
-    def __init__(self):
-        # General data
-        name = ''
-        region = ''
-        id = ''
-        realm = ''
+    def __init__(self, id, team, name, hero):
+        self.id = id
+        self.team = team
+        self.name = name
+        self.hero = hero
+
+    def __str__(self):
+      return "%s\t%s\t%s\t%s" % (self.id,
+        self.team,
+        self.hero,
+        self.name
+      )
 
 class GameUnit(Unit):
     _PICKUNITS = {

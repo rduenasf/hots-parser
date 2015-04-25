@@ -18,6 +18,13 @@ def processEvents(protocol=None, replayFile=None):
     # Pre parse preparation go here
     eh = Replay(protocol, replayFile)
 
+    eh.process_replay_details()
+
+    print "\n === Players ==="
+
+    for player in eh.get_players_in_game():
+      print player
+
     eh.process_replay()
 
     pickedGemsPerTeam = [0, 0]
@@ -38,6 +45,7 @@ def processEvents(protocol=None, replayFile=None):
         #pickedGemsPerTeam[unit.team] += 1
 
     print "\n ==== Heroes ===="
+    print "%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % ("Name", "InternalName", "IsHuman", "PlayerId", "Team", "UnitTag")
 
     for hero in eh.heroes_in_game():
       print hero

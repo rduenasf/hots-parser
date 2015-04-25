@@ -42,7 +42,10 @@ class EventLogger:
             self._event_stats[event['_event']] = stat
         # write structure
         if printable:
-          print >> output, '%s\t %s' % (event['_gameloop'], json.dumps(event))
+          if '_gameloop' in event:
+            print >> output, '%s\t %s' % (event['_gameloop'], json.dumps(event))
+          else:
+            print >> output, '-\t %s' % (json.dumps(event))
 
     def log_stats(self, output):
         for name, stat in sorted(self._event_stats.iteritems(), key=lambda x: x[1][1]):
@@ -95,14 +98,17 @@ if __name__ == '__main__':
 
         details['m_cacheHandles'] = None
 
-        logger.log(sys.stdout, json.details)
+        printable = True
+
+        logger.log(sys.stdout, details, printable)
 
     # Print protocol init data
     if args.initdata:
         contents = archive.read_file('replay.initData')
         initdata = protocol.decode_replay_initdata(contents)
         initdata['m_syncLobbyState']['m_gameDescription']['m_cacheHandles'] = None
-        logger.log(sys.stdout, initdata)
+        printable = True
+        logger.log(sys.stdout, initdata, printable)
 
     # Print game events and/or game events stats
     if args.gameevents:
@@ -130,7 +136,8 @@ if __name__ == '__main__':
     if args.attributeevents:
         contents = archive.read_file('replay.attributes.events')
         attributes = protocol.decode_replay_attributes_events(contents)
-        logger.log(sys.stdout, attributes)
+        printable = True
+        logger.log(sys.stdout, attributes, printable)
 
     # Print stats
     if args.stats:
