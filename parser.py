@@ -1,65 +1,82 @@
-__author__ = 'cristiano'
-from s2protocol import protocol15405
+__author__ = 'Rodrigo Duenas, Cristian Orellana'
+
+from s2protocol import protocol34835
 from s2protocol.mpyq import mpyq
+from replay import *
+import sys
+import argparse
 
-class HeroReplay():
-    def __init__(self):
-        # General Data
-        map = ''
-        startTime = None # UTC
-        duration = None # in seconds
-        speed = None
+def processEvents(protocol=None, replayFile=None):
+    """"
+    This is the main loop, reads a replayFile and applies available decoders (trackerEvents, gameEvents, msgEvents, etc)
+    Receives the protocol and the replayFile as an mpyq file object
+    """
+    if not protocol or not replayFile:
+        print "Error - Protocol and replayFire are needed"
+        return -1
 
+    # Pre parse preparation go here
+    eh = Replay(protocol, replayFile)
 
-class HeroUnit():
+    eh.process_replay_details()
+    eh.process_replay_header()
 
-    def __init__(self):
-        # General data
-        name = ''
-        isHuman = False
-        playerUnit = None
-        team = None
+    print "\n === Map Info ==="
 
-        # Metrics
-        deathCount = 0
-        killCountNeutral = 0 # How many neutral npc units this hero killed?
-        killCountBuildings = 0 # How many buildings this hero destroyed?
-        killCountMinions = 0 # How many minions this hero killed?
-        killCount = 0 # How many units this hero killed (normal minions + heroes + buildings + neutral npcs)
-        killCountHeroes = 0 # How many heroes this hero killed?
-        totalOutDamage = 0 # How much damage this hero did?
-        totalOutHeal = 0 # How much heal this hero did?
-        totalIncDamage = 0 # How much damage this hero received
-        totalIncHeal = 0 # How much heal this hero received
-        maxKillSpree = 0 # maximum number of heroes killed after (if ever) die
+    print eh.replayInfo
 
+    print "\n === Players ==="
 
-    # for now no getters nor setters ... just direct access to the structure
+    for player in eh.get_players_in_game():
+      print player
+
+    eh.process_replay()
+
+    pickedGemsPerTeam = [0, 0]
+    armyStr = {} # key = team, value = dict with key = seconds and value = armystr
 
 
-class PlayerUnit():
-
-    def __init__(self):
-        # General data
-        name = ''
-        region = ''
-        id = ''
-        realm = ''
-
-def getHeaders(proto, replayFile):
-    return proto.decode_replay_header(replayFile.header['user_data_header']['content'])
 
 
-heroes = []
-players = []
-replayData = HeroReplay()
+    print "\n ==== Units ===="
 
-p = protocol15405
-replay = mpyq.MPQArchive('m.StormReplay')
 
-headers = getHeaders(p, replay)
 
-# Fill replay data
-replayData.duration = headers['m_elapsedGameLoops']/16
-print headers
-print replayData.duration
+    for unit in eh.units_in_game():
+        armyStr[unit.team] = {unit}
+        print unit
+
+
+      #if unit.is_map_resource():
+        # print unit
+      #  print unit.internalName
+        #pickedGemsPerTeam[unit.team] += 1
+
+    print "\n ==== Heroes ===="
+    print "%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % ("Name", "InternalName", "IsHuman", "PlayerId", "Team", "UnitTag")
+
+    for hero in eh.heroes_in_game():
+      print hero
+
+    print "\n ==== Summary ===="
+
+    print "Picked Gems:\t%s" % (pickedGemsPerTeam)
+
+
+    # for unit in
+
+
+    #for index in eh.heroList:
+        #print "%s: %s" % (eh.heroList[index].internalName, eh.heroList[index].deathCount)
+        #keys = eh.heroList[hero].deathList.keys()
+        #print eh.unitsInGame[eh.heroList[hero].deathList[keys[0]]['killerUnitIndex']]
+
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('replay_file', help='.StormReplay file to load')
+    args = parser.parse_args()
+
+    replay = mpyq.MPQArchive(args.replay_file)
+    processEvents(protocol34835, replay)
