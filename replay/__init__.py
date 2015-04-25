@@ -45,7 +45,7 @@ class Replay():
     def process_replay_header(self):
         contents = self.replayFile.header['user_data_header']['content']
         header = self.protocol.decode_replay_header(contents)
-        self.replayInfo.duration = header['m_elapsedGameLoops']
+        self.replayInfo.gameLoops = header['m_elapsedGameLoops']
 
 
     def get_players_in_game(self):

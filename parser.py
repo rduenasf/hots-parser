@@ -5,6 +5,7 @@ from s2protocol.mpyq import mpyq
 from replay import *
 import sys
 import argparse
+from datetime import datetime
 
 def processEvents(protocol=None, replayFile=None):
     """"
@@ -33,18 +34,39 @@ def processEvents(protocol=None, replayFile=None):
     eh.process_replay()
 
     pickedGemsPerTeam = [0, 0]
-    armyStr = {} # key = team, value = dict with key = seconds and value = armystr
-
+    armyStr = {} # key = team, value = dict with key = second and value = armystr
+    for second in xrange(0, eh.replayInfo.durations_in_secs()):
+        armyStr[second] = [0,0]
 
 
 
     print "\n ==== Units ===="
 
+    second = 0
+    duration = eh.replayInfo.durations_in_secs()
+
+
 
 
     for unit in eh.units_in_game():
-        armyStr[unit.team] = {unit}
-        print unit
+
+        end = unit.diedAt if unit.diedAt > 0 else eh.replayInfo.durations_in_secs()
+        if unit.team in [0,1]:
+            for second in xrange(unit.bornAt, end):
+                armyStr[second][unit.team] += unit.get_strength()
+
+        if unit.internalName.startswith('Merc') and unit.team < 0:
+            print unit
+
+
+
+
+    # for second in xrange(0, eh.replayInfo.durations_in_secs()):
+    #     unitsAlive = [unit for unit in eh.unitsInGame if (second >= eh.unitsInGame[unit].bornAt and second < eh.unitsInGame[unit].diedAt and eh.unitsInGame[unit].is_hired_mercenary())]
+    #     print unitsAlive
+    #
+    #     armyStr[second] = []
+
 
 
       #if unit.is_map_resource():
@@ -61,6 +83,12 @@ def processEvents(protocol=None, replayFile=None):
     print "\n ==== Summary ===="
 
     print "Picked Gems:\t%s" % (pickedGemsPerTeam)
+
+    for i in xrange(0, eh.replayInfo.durations_in_secs()):
+        print "%s\t%s" % (armyStr[i][0], armyStr[i][1]*-1)
+
+
+
 
 
     # for unit in

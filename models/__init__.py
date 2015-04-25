@@ -49,13 +49,20 @@ class HeroReplay():
         # General Data
         self.map = ''
         self.startTime = None # UTC
-        self.duration = None # in gameloops
+        self.gameLoops = None # duration of the game in gameloops
         self.speed = None
 
+    def durations_in_secs(self):
+        if self.gameLoops:
+            return self.gameLoops / 16
+        else:
+            return 0
+
     def __str__(self):
-        return "Title: %s\nStarted at: %s\nDuration (gl): %s\nSpeed: %s" % (self.map,
+        return "Title: %s\nStarted at: %s\nDuration (s/gl): %d/%d\nSpeed: %s" % (self.map,
         self.startTime,
-        self.duration,
+        self.durations_in_secs(),
+        self.gameLoops,
         self.speed
       )
 
@@ -86,19 +93,27 @@ class GameUnit(Unit):
             'RegenGlobe': 128
     }
 
-    _MERCUNITSNPC = { # Key is the name, value is the str multiplier
+    _MERCUNITSNPC = [
         # Garden Merc units
-            'MercDefenderSiegeGiant': 2,
-            'MercDefenderMeleeOgre': 1,
-            'MercDefenderRangedOgre': 1
-    }
+            'MercDefenderSiegeGiant', 'MercDefenderMeleeOgre', 'MercDefenderRangedOgre', 'JungleGraveGolemDefender']
 
     _MERCUNITSTEAM = {
         'MercLanerMeleeOgre': 1,
-        'MercLanerSiegeGiant': 2,
-        'MercLanerRangedOgre': 1
+        'MercLanerSiegeGiant': 2.5,
+        'MercLanerRangedOgre': 1,
+        'JungleGraveGolemLaner': 10,
+        # TODO move to own list as map event
+        'SoulEaterMinion': 1.75,
+        'SoulEater': 3
     }
 
+    _ADVANCEDUNIT = {'CatapultMinion': 2}
+
+
+    _NORMALUNIT = {'FootmanMinion': 0.25,
+                   'WizardMinion': 0.25,
+                   'RangedMinion': 0.25
+                }
     def __init__(self):
         # General Data
         self.internalName = '' #Unit Name
@@ -128,10 +143,20 @@ class GameUnit(Unit):
         return False
 
     def is_mercenary(self):
-        return self.internalName in GameUnit._MERCUNITSNPC
+        return self.internalName in GameUnit._MERCUNITSNPC or self.internalName in GameUnit._MERCUNITSTEAM
 
+    def is_hired_mercenary(self):
+        return self.internalName in GameUnit._MERCUNITSTEAM
 
-
+    def get_strength(self):
+        if self.is_hired_mercenary():
+            return GameUnit._MERCUNITSTEAM[self.internalName]
+        elif self.internalName in GameUnit._ADVANCEDUNIT:
+            return GameUnit._ADVANCEDUNIT[self.internalName]
+        elif self.internalName in GameUnit._NORMALUNIT:
+            return GameUnit._NORMALUNIT[self.internalName]
+        else:
+            return 0
 
     def __str__(self):
       return "%s\t%s\t(%s)\tcreated: %d s\tdied: %s s\tlifespan: %s gls\tpicked? (%s)\tkilledby: %s" \
