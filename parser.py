@@ -63,32 +63,6 @@ def processEvents(protocol=None, replayFile=None):
 
     print "\nUUID: " + str(replayUuid)
 
-    #print json.dumps(mercStr)
-
-    # for i in xrange(0, eh.replayInfo.durations_in_secs()):
-    #     print "{y:'%d', a:%d, b:%d}," % (i,armyStr[i][0], armyStr[i][1])
-
-
-################################################## DUMP DATA ##############
-    # print '['
-    # for i in xrange(0, eh.replayInfo.durations_in_secs()):
-    #     print "[%d, %d]," % (i, armyStr[i][0])
-    # print "]"
-    #
-    # print '['
-    # for i in xrange(0, eh.replayInfo.durations_in_secs()):
-    #     print "[%d, %d]," % (i, armyStr[i][1]*-1)
-    # print "]"
-
-
-    # for unit in
-
-
-    #for index in eh.heroList:
-        #print "%s: %s" % (eh.heroList[index].internalName, eh.heroList[index].deathCount)
-        #keys = eh.heroList[hero].deathList.keys()
-        #print eh.unitsInGame[eh.heroList[hero].deathList[keys[0]]['killerUnitIndex']]
-
 
 
 if __name__ == "__main__":
