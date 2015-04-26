@@ -160,6 +160,9 @@ class GameUnit(Unit):
     def is_advanced_unit(self):
         return self.internalName in GameUnit._ADVANCEDUNIT
 
+    def get_death_time(self, total_time):
+        return self.diedAt if self.diedAt > 0 else total_time
+
     def get_strength(self):
         if self.is_hired_mercenary():
             return GameUnit._MERCUNITSTEAM[self.internalName]

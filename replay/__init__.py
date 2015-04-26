@@ -73,6 +73,30 @@ class Replay():
     def heroes_in_game(self):
       return self.heroList.itervalues()
 
+    def calculate_game_strength(self):
+      self.army_strength = [
+        [[t, 0] for t in xrange(1, self.replayInfo.durations_in_secs() + 1)],
+        [[t, 0] for t in xrange(1, self.replayInfo.durations_in_secs() + 1)]
+      ]
+
+
+      self.merc_strength = [
+        [[t, 0] for t in xrange(1, self.replayInfo.durations_in_secs() + 1)],
+        [[t, 0] for t in xrange(1, self.replayInfo.durations_in_secs() + 1)]
+      ]
+
+      for unit in self.units_in_game():
+        if unit.team not in [0,1]:
+          continue
+
+        end = unit.get_death_time(self.replayInfo.durations_in_secs())
+        for second in xrange(unit.bornAt, end):
+          self.army_strength[unit.team][second][1] += unit.get_strength()
+
+          if unit.is_mercenary():
+            self.merc_strength[unit.team][second][1] += unit.get_strength()
+
+
     def NNet_Replay_Tracker_SUnitBornEvent(self, event):
         """
         This function process the events of the type NNet.Replay.Tracker.SUnitBornEvent
