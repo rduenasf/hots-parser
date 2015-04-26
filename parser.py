@@ -25,20 +25,27 @@ def processEvents(protocol=None, replayFile=None):
     eh.process_replay_details()
     eh.process_replay_header()
 
+
     print "\n === Map Info ==="
 
     print eh.replayInfo
+
+    eh.process_replay()
+
+    eh.process_replay_attributes()
 
     print "\n === Players ==="
 
     for player in eh.get_players_in_game():
       print player
 
+
     eh.process_replay()
 
 
+
     print "\n ==== Heroes ===="
-    print "%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % ("Name", "InternalName", "IsHuman", "PlayerId", "Team", "UnitTag")
+    print "%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % ("Name", "InternalName", "IsHuman", "PlayerId", "Team", "UnitTag","Death Count")
 
     for hero in eh.heroes_in_game():
       print hero

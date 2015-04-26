@@ -47,6 +47,19 @@ class Replay():
         header = self.protocol.decode_replay_header(contents)
         self.replayInfo.gameLoops = header['m_elapsedGameLoops']
 
+    def process_replay_attributes(self):
+        contents = self.replayFile.read_file('replay.attributes.events')
+        attributes = self.protocol.decode_replay_attributes_events(contents)
+
+        # Get if players are human or not
+        for playerId in attributes['scopes'].keys():
+            if playerId <= 10:
+                self.heroList[playerId - 1].isHuman = (attributes['scopes'][playerId][500][0]['value'] == 'Humn')
+
+        # If player is human, get the level this player has for the selected hero
+                if self.heroList[playerId - 1].isHuman:
+                    self.players[playerId - 1].heroLevel = attributes['scopes'][playerId][4008][0]['value']
+
 
     def get_players_in_game(self):
       return self.players.itervalues()
@@ -135,5 +148,4 @@ class Replay():
         # Populate Hero Death events based game Events
         if event['_event'] != 'NNet.Game.SCameraUpdateEvent':
             return None
-
         getHeroDeathsFromGameEvt(event, self.heroList)
