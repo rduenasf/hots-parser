@@ -30,6 +30,7 @@ class HeroUnit(Unit):
         self.unitTagRecycle = None
         self.unitTagIndex = None
 
+
         # Metrics
         self.deathCount = 0
         self.deathList = {} # At what point in game (in seconds) the hero died
@@ -45,7 +46,7 @@ class HeroUnit(Unit):
         self.maxKillSpree = 0 # maximum number of heroes killed after (if ever) die
 
     def __str__(self):
-        return "%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitTag)
+        return "%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitTag, self.deathCount)
 
 
 
@@ -80,12 +81,14 @@ class Player():
         self.team = team
         self.name = name
         self.hero = hero
+        self.heroLevel = 1
 
     def __str__(self):
-      return "%s\t%s\t%s\t%s" % (self.id,
+      return "%10s\t%10s\t%10s\t%12s\t%10s" % (self.id,
         self.team,
         self.hero,
-        self.name
+        self.name,
+        self.heroLevel
       )
 
 class GameUnit(Unit):
