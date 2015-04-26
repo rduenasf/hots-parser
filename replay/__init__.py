@@ -100,6 +100,13 @@ class Replay():
         getUnitDestruction(event, self.unitsInGame)
 
 
+    def NNet_Replay_Tracker_SUnitOwnerChangeEvent(self, event):
+        if event['_event'] != 'NNet.Replay.Tracker.SUnitOwnerChangeEvent':
+            return None
+
+        getUnitOwners(event, self.unitsInGame)
+
+
     def NNet_Game_SCameraUpdateEvent(self, event):
         # Populate Hero Death events based game Events
         if event['_event'] != 'NNet.Game.SCameraUpdateEvent':

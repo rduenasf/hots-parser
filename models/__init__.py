@@ -1,16 +1,21 @@
 __author__ = 'Rodrigo Duenas, Cristian Orellana'
 
 class Unit():
-  def unit_tag(self):
-    return (self.unitTagIndex << 18) + self.unitTagRecycle
+
+    def __init__(self):
+        self.bornAtX = -1
+        self.bornAtY = -1
+
+    def unit_tag(self):
+        return (self.unitTagIndex << 18) + self.unitTagRecycle
 
 
-  def unit_tag_index(self):
-    return (self.unitTag >> 18) & 0x00003fff
+    def unit_tag_index(self):
+        return (self.unitTag >> 18) & 0x00003fff
 
 
-  def unit_tag_recycle(self):
-    return (self.unitTag) & 0x0003ffff
+    def unit_tag_recycle(self):
+        return (self.unitTag) & 0x0003ffff
 
 class HeroUnit(Unit):
 
@@ -84,6 +89,9 @@ class Player():
       )
 
 class GameUnit(Unit):
+
+    _BEACONUNIT = ['TownMercCampCaptureBeacon', 'DragonballCaptureBeacon', 'WatchTowerCaptureBeacon']
+
     _PICKUNITS = {
             #'ItemSeedPickup': 150,
             'ItemSoulPickup': 128,
@@ -119,7 +127,7 @@ class GameUnit(Unit):
         self.internalName = '' #Unit Name
         self.bornAt = None # Seconds into the game when it was created
         self.bornAtGameLoops = None
-        self.diedAt = None # Seconds into the game when it was destroyed
+        self.diedAt = -1 # Seconds into the game when it was destroyed (-1 means never died)
         self.diedAtGameLoops = None
         self.team = None # The team this unit belongs to
         self.gameLoopsAlive = -1 # -1 means never died.
@@ -131,6 +139,7 @@ class GameUnit(Unit):
         self.killerTagIndex = None
         self.killerTagRecycle = None
         self.killerPlayerId = None
+        self.ownerList = [] # contains a tuple (a, b) where a = owner team and b = gameloop of ownership event
 
 
     def is_map_resource(self):
@@ -148,6 +157,9 @@ class GameUnit(Unit):
     def is_hired_mercenary(self):
         return self.internalName in GameUnit._MERCUNITSTEAM
 
+    def is_advanced_unit(self):
+        return self.internalName in GameUnit._ADVANCEDUNIT
+
     def get_strength(self):
         if self.is_hired_mercenary():
             return GameUnit._MERCUNITSTEAM[self.internalName]
@@ -159,5 +171,8 @@ class GameUnit(Unit):
             return 0
 
     def __str__(self):
-      return "%s\t%s\t(%s)\tcreated: %d s\tdied: %s s\tlifespan: %s gls\tpicked? (%s)\tkilledby: %s" \
-                  % (self.unitTag, self.internalName, self.team, self.bornAt, self.diedAt, self.gameLoopsAlive, self.was_picked(), self.killerPlayerId)
+        val = "%s\t%s\t(%s)\tcreated: %d s (%d,%d) \tdied: %s s\tlifespan: %s gls\tpicked? (%s)\tkilledby: %s" \
+                  % (self.unitTag, self.internalName, self.team, self.bornAt, self.bornAtX, self.bornAtY, self.diedAt, self.gameLoopsAlive, self.was_picked(), self.killerPlayerId)
+        if len(self.ownerList) > 0:
+            val += "\t%s" % self.ownerList
+        return val
