@@ -50,27 +50,18 @@ def processEvents(protocol=None, replayFile=None):
     for hero in eh.heroes_in_game():
       print hero
 
-    print "\n ==== Summary ===="
-
     eh.calculate_game_strength()
-
 
     f = open('replay-results/' + str(replayUuid) + '.armystr.json', 'w')
 
     f.write(json.dumps([
-    {
-      "key": "Team 1",
-      "values": eh.army_strength[0]
-    },
-    {
-      "key": "Team 2",
-      "values": eh.army_strength[1]
-    }
+      { "key": "Team 1", "values": eh.army_strength[0] },
+      { "key": "Team 2", "values": eh.army_strength[1] }
     ]))
 
     f.close()
 
-    print "UUID: " + str(replayUuid)
+    print "\nUUID: " + str(replayUuid)
 
     #print json.dumps(mercStr)
 
