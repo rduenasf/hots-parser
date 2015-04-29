@@ -15,6 +15,7 @@ class Replay():
                     # (secsInGame, action)
     heroList = {} # key = playerId - content = hero instance
     heroDeathsList = list()
+    abilityList = list()
 
     mapName = ''
     time = None
@@ -162,3 +163,13 @@ class Replay():
             return None
 
         getUnitClicked(event, self.unitsInGame)
+
+
+    def NNet_Game_SCmdEvent(self, event):
+        if event['_event'] != 'NNet.Game.SCmdEvent':
+            return None
+
+        ability = getAbilities(event)
+        if ability:
+            # update hero stat
+            self.heroList[ability.userId].castedAbilities[ability.castedAtGameLoops] = ability

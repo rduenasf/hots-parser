@@ -1,6 +1,7 @@
 
 from models import *
 import datetime
+import json
 
 
 
@@ -93,6 +94,54 @@ def getHeroDeathsFromReplayEvt(e, heroList):
             heroDeathEvent = {'killerPlayerId': e['m_killerPlayerId'], 'killerUnitIndex': None}
             heroList[deadUnitIndex].deathList[int(e['_gameloop']/16)] = heroDeathEvent
             heroList[deadUnitIndex].deathCount += 1
+
+def getAbilities(e):
+    """
+    This function read an NNet.Game.SCmdEvent and gets relevant information
+
+    """
+
+    if e['m_abil']: # If this is an actual user available ability
+        if e['m_data'].get('TargetPoint'):
+            tpa = TargetPointAbility()
+            tpa.abilityTag = e['m_abil']['m_abilLink'] << 5 | e['m_abil']['m_abilCmdIndex']
+            tpa.castedAt = int(e['_gameloop'] / 16)
+            tpa.userId = e['_userid']['m_userId']
+            tpa.castedAtGameLoops = e['_gameloop']
+            tpa.x = e['m_data']['TargetPoint']['x']/4096.0
+            tpa.y = e['m_data']['TargetPoint']['y']/4096.0
+            tpa.z = e['m_data']['TargetPoint']['z']/4096.0
+
+            return tpa
+
+
+
+
+        elif e['m_data'].get('TargetUnit'):
+            tua = TargetUnitAbility()
+            tua.abilityTag = e['m_abil']['m_abilLink'] << 5 | e['m_abil']['m_abilCmdIndex']
+            tua.castedAt = int(e['_gameloop'] / 16)
+            tua.userId = e['_userid']['m_userId']
+            tua.castedAtGameLoops = e['_gameloop']
+            tua.x = e['m_data']['TargetUnit']['m_snapshotPoint']['x']/4096.0
+            tua.y = e['m_data']['TargetUnit']['m_snapshotPoint']['y']/4096.0
+            tua.z = e['m_data']['TargetUnit']['m_snapshotPoint']['z']/4096.0
+            tua.targetPlayerId = e['m_data']['TargetUnit']['m_snapshotControlPlayerId']
+            tua.targetTeamId = e['m_data']['TargetUnit']['m_snapshotUpkeepPlayerId']
+            tua.targetUnitTag = e['m_data']['TargetUnit']['m_tag']
+
+            return tua
+
+        elif not e['m_data']['None']:
+            abil = BaseAbility()
+            abil.abilityTag = e['m_abil']['m_abilLink'] << 5 | e['m_abil']['m_abilCmdIndex']
+            abil.castedAtGameLoops = e['_gameloop']
+            abil.castedAt = int(e['_gameloop'] / 16)
+            abil.userId =  e['_userid']['m_userId']
+
+            return abil
+
+
 
 def getHeroDeathsFromGameEvt(e, heroList):
     """
