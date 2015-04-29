@@ -39,11 +39,24 @@ def getUnitOwners(e, unitsInGame):
     """
     Get the owner of the unit and the time the unit was owned.
     """
-    if e['_event'] == 'NNet.Replay.Tracker.SUnitOwnerChangeEvent' and e['m_upkeepPlayerId'] in (11, 12) :
+    if e['_event'] == 'NNet.Replay.Tracker.SUnitOwnerChangeEvent' and e['m_upkeepPlayerId'] in (11, 12):
         unitTag = (e['m_unitTagIndex'] << 18) + e['m_unitTagRecycle']
-        ownerTeam = e['m_upkeepPlayerId'] - 11
-        ownerTuple = (ownerTeam, int(e['_gameloop']/16))
+        owner = e['m_upkeepPlayerId'] - 11
+        ownerTuple = (owner, int(e['_gameloop']/16))
         unitsInGame[unitTag].ownerList.append(ownerTuple)
+
+def getUnitClicked(e, unitsInGame):
+    """
+    Gets information when a unit has been clicked by another one. i.e: When clicking tribute or returning souls
+    """
+
+    if e['_event'] == 'NNet.Game.SCmdUpdateTargetUnitEvent':
+        unitTag = e['m_target']['m_tag']
+        if unitTag in unitsInGame.keys():
+            if unitsInGame[unitTag].is_tribute():
+                playerId = e['_userid']['m_userId']
+                clickTuple = (playerId, int(e['_gameloop']/16))
+                unitsInGame[unitTag].clickerList.append(clickTuple)
 
 
 def getUnitDestruction(e, unitsInGame):
@@ -91,7 +104,7 @@ def getHeroDeathsFromGameEvt(e, heroList):
 
     if e['_event'] == 'NNet.Game.SCameraUpdateEvent' and not e['m_target'] and e['_gameloop'] > 10:
         # find the hero
-        playerId =  int(e['_userid']['m_userId']) + 1
+        playerId =  int(e['_userid']['m_userId'])
         unitTag = [key for (key, value) in sorted(heroList.items()) if value.playerId == playerId][0]
         eventTime = int(e['_gameloop']/16)
 
@@ -104,7 +117,7 @@ def getHeroDeathsFromGameEvt(e, heroList):
 def getUnitsInGame(e):
 
     """
-    Stores all non-hero units
+    Stores all units
     """
     if e['_event'] == 'NNet.Replay.Tracker.SUnitBornEvent' and not e['m_unitTypeName'].startswith('Hero'):
         unit = GameUnit()

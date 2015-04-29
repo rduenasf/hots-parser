@@ -44,6 +44,10 @@ class HeroUnit(Unit):
         self.totalIncDamage = 0 # How much damage this hero received
         self.totalIncHeal = 0 # How much heal this hero received
         self.maxKillSpree = 0 # maximum number of heroes killed after (if ever) die
+        self.capturedTributes = 0 # Number of tributes captured by this hero in the Curse map
+        self.capturedMercCamps = 0
+        self.capturedBeaconTowers = 0
+
 
     def __str__(self):
         return "%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitTag, self.deathCount)
@@ -65,9 +69,9 @@ class HeroReplay():
             return 0
 
     def __str__(self):
-        return "Title: %s\nStarted at: %s\nDuration (s/gl): %d/%d\nSpeed: %s" % (self.map,
+        return "Title: %s\nStarted at: %s\nDuration (min/gl): %d/%d\nSpeed: %s" % (self.map,
         self.startTime,
-        self.durations_in_secs(),
+        self.durations_in_secs()/60,
         self.gameLoops,
         self.speed
       )
@@ -76,24 +80,29 @@ class HeroReplay():
 
 class Player():
 
-    def __init__(self, id, team, name, hero):
+    def __init__(self, id, team, name, hero, toonHandle):
         self.id = id
         self.team = team
         self.name = name
         self.hero = hero
         self.heroLevel = 1
+        self.toonHandle = toonHandle
 
     def __str__(self):
-      return "%10s\t%10s\t%10s\t%12s\t%10s" % (self.id,
+      return "%10s\t%10s\t%10s\t%12s\t%10s\t%15s" % (self.id,
         self.team,
         self.hero,
         self.name,
-        self.heroLevel
+        self.heroLevel,
+        self.toonHandle
       )
 
 class GameUnit(Unit):
 
+    _TRIBUTEUNIT = ['RavenLordTribute']
+
     _BEACONUNIT = ['TownMercCampCaptureBeacon', 'DragonballCaptureBeacon', 'WatchTowerCaptureBeacon']
+
 
     _PICKUNITS = {
             #'ItemSeedPickup': 150,
@@ -142,7 +151,10 @@ class GameUnit(Unit):
         self.killerTagIndex = None
         self.killerTagRecycle = None
         self.killerPlayerId = None
-        self.ownerList = [] # contains a tuple (a, b) where a = owner team and b = gameloop of ownership event
+        self.ownerList = [] # contains a list of tuples (a, b) where a = owner team and b = gameloop of ownership event
+        self.clickerList = [] # contains a list of tuples (a, b) where a = clicker and b = GameLoop of the click event
+        self.heroData = None
+
 
 
     def is_map_resource(self):
@@ -160,6 +172,20 @@ class GameUnit(Unit):
     def is_hired_mercenary(self):
         return self.internalName in GameUnit._MERCUNITSTEAM
 
+    def is_beacon(self):
+        return self.internalName in GameUnit._BEACONUNIT
+
+    def is_tribute(self):
+        return self.internalName in GameUnit._TRIBUTEUNIT
+
+    def get_tribute_controller(self):
+        """
+        Gets the team that controlled the tribute. None if the unit is not a tribute
+        """
+        if not self.is_tribute() or len(self.clickerList) == 0:
+            return None
+        return self.clickerList[len(self.clickerList) - 1][0]
+
     def is_advanced_unit(self):
         return self.internalName in GameUnit._ADVANCEDUNIT
 
@@ -169,7 +195,7 @@ class GameUnit(Unit):
     def get_strength(self):
         if self.is_hired_mercenary():
             return GameUnit._MERCUNITSTEAM[self.internalName]
-        elif self.internalName in GameUnit._ADVANCEDUNIT:
+        elif self.is_advanced_unit():
             return GameUnit._ADVANCEDUNIT[self.internalName]
         elif self.internalName in GameUnit._NORMALUNIT:
             return GameUnit._NORMALUNIT[self.internalName]
@@ -180,5 +206,7 @@ class GameUnit(Unit):
         val = "%s\t%s\t(%s)\tcreated: %d s (%d,%d) \tdied: %s s\tlifespan: %s gls\tpicked? (%s)\tkilledby: %s" \
                   % (self.unitTag, self.internalName, self.team, self.bornAt, self.bornAtX, self.bornAtY, self.diedAt, self.gameLoopsAlive, self.was_picked(), self.killerPlayerId)
         if len(self.ownerList) > 0:
-            val += "\t%s" % self.ownerList
+            val += "\tOwners: %s" % self.ownerList
+        if len(self.clickerList) > 0:
+            val += "\tTaken by: %s" % (self.get_tribute_controller())
         return val

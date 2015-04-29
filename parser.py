@@ -40,8 +40,6 @@ def processEvents(protocol=None, replayFile=None):
       print player
 
 
-    eh.process_replay()
-
 
 
     print "\n ==== Heroes ===="
@@ -49,6 +47,15 @@ def processEvents(protocol=None, replayFile=None):
 
     for hero in eh.heroes_in_game():
       print hero
+
+
+    print "\n === Clicked Units ==="
+
+    for unit in eh.get_clicked_units():
+        print unit
+
+    print "\n ==== Summary ===="
+
 
     eh.calculate_game_strength()
 

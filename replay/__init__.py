@@ -4,8 +4,8 @@ from helpers import *
 class Replay():
 
     EVENT_FILES = {
-      'replay.game.events': 'decode_replay_game_events',
-      'replay.tracker.events': 'decode_replay_tracker_events'
+        'replay.tracker.events': 'decode_replay_tracker_events',
+        'replay.game.events': 'decode_replay_game_events'
     }
 
     replayInfo = HeroReplay()
@@ -39,7 +39,8 @@ class Replay():
         team = player['m_teamId']
         hero = player['m_hero']
         name = player['m_name']
-        self.players[player['m_workingSetSlotId']] = Player(id, team, name, hero)
+        toonHandle = '-'.join([str(player['m_toon']['m_region']),player['m_toon']['m_programId'],str(player['m_toon']['m_realm']),str(player['m_toon']['m_id'])])
+        self.players[player['m_workingSetSlotId']] = Player(id, team, name, hero, toonHandle)
 
 
     def process_replay_header(self):
@@ -79,6 +80,9 @@ class Replay():
         if hasattr(self, event_name):
           getattr(self, event_name)(event)
 
+    def get_clicked_units(self):
+        return [unit for unit in self.unitsInGame.itervalues() if len(unit.clickerList) > 0]
+
 
     def units_in_game(self):
       return self.unitsInGame.itervalues()
@@ -117,16 +121,19 @@ class Replay():
         if event['_event'] != 'NNet.Replay.Tracker.SUnitBornEvent':
             return None
 
+        # Populate Heroes
+        hero = getHeroes(event, self.players)
+        if hero:
+          self.heroList[hero.playerId] = hero
+
         # Populate unitsInGame
         unit = getUnitsInGame(event)
         if unit:
           self.unitsInGame[unit.unitTag] = unit
 
 
-        # Populate Heroes
-        hero = getHeroes(event, self.players)
-        if hero:
-          self.heroList[hero.playerId] = hero
+
+
 
     def NNet_Replay_Tracker_SUnitDiedEvent(self, event):
         # Populate Hero Death events
@@ -149,3 +156,9 @@ class Replay():
         if event['_event'] != 'NNet.Game.SCameraUpdateEvent':
             return None
         getHeroDeathsFromGameEvt(event, self.heroList)
+
+    def NNet_Game_SCmdUpdateTargetUnitEvent(self, event):
+        if event['_event'] != 'NNet.Game.SCmdUpdateTargetUnitEvent':
+            return None
+
+        getUnitClicked(event, self.unitsInGame)
