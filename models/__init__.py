@@ -1,16 +1,21 @@
 __author__ = 'Rodrigo Duenas, Cristian Orellana'
 
 class Unit():
-  def unit_tag(self):
-    return (self.unitTagIndex << 18) + self.unitTagRecycle
+
+    def __init__(self):
+        self.bornAtX = -1
+        self.bornAtY = -1
+
+    def unit_tag(self):
+        return (self.unitTagIndex << 18) + self.unitTagRecycle
 
 
-  def unit_tag_index(self):
-    return (self.unitTag >> 18) & 0x00003fff
+    def unit_tag_index(self):
+        return (self.unitTag >> 18) & 0x00003fff
 
 
-  def unit_tag_recycle(self):
-    return (self.unitTag) & 0x0003ffff
+    def unit_tag_recycle(self):
+        return (self.unitTag) & 0x0003ffff
 
 class HeroUnit(Unit):
 
@@ -25,6 +30,7 @@ class HeroUnit(Unit):
         self.unitTagRecycle = None
         self.unitTagIndex = None
 
+
         # Metrics
         self.deathCount = 0
         self.deathList = {} # At what point in game (in seconds) the hero died
@@ -38,9 +44,13 @@ class HeroUnit(Unit):
         self.totalIncDamage = 0 # How much damage this hero received
         self.totalIncHeal = 0 # How much heal this hero received
         self.maxKillSpree = 0 # maximum number of heroes killed after (if ever) die
+        self.capturedTributes = 0 # Number of tributes captured by this hero in the Curse map
+        self.capturedMercCamps = 0
+        self.capturedBeaconTowers = 0
+
 
     def __str__(self):
-        return "%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitTag)
+        return "%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitTag, self.deathCount)
 
 
 
@@ -49,13 +59,20 @@ class HeroReplay():
         # General Data
         self.map = ''
         self.startTime = None # UTC
-        self.duration = None # in gameloops
+        self.gameLoops = None # duration of the game in gameloops
         self.speed = None
 
+    def durations_in_secs(self):
+        if self.gameLoops:
+            return self.gameLoops / 16
+        else:
+            return 0
+
     def __str__(self):
-        return "Title: %s\nStarted at: %s\nDuration (gl): %s\nSpeed: %s" % (self.map,
+        return "Title: %s\nStarted at: %s\nDuration (min/gl): %d/%d\nSpeed: %s" % (self.map,
         self.startTime,
-        self.duration,
+        self.durations_in_secs()/60,
+        self.gameLoops,
         self.speed
       )
 
@@ -63,20 +80,30 @@ class HeroReplay():
 
 class Player():
 
-    def __init__(self, id, team, name, hero):
+    def __init__(self, id, team, name, hero, toonHandle):
         self.id = id
         self.team = team
         self.name = name
         self.hero = hero
+        self.heroLevel = 1
+        self.toonHandle = toonHandle
 
     def __str__(self):
-      return "%s\t%s\t%s\t%s" % (self.id,
+      return "%10s\t%10s\t%10s\t%12s\t%10s\t%15s" % (self.id,
         self.team,
         self.hero,
-        self.name
+        self.name,
+        self.heroLevel,
+        self.toonHandle
       )
 
 class GameUnit(Unit):
+
+    _TRIBUTEUNIT = ['RavenLordTribute']
+
+    _BEACONUNIT = ['TownMercCampCaptureBeacon', 'DragonballCaptureBeacon', 'WatchTowerCaptureBeacon']
+
+
     _PICKUNITS = {
             #'ItemSeedPickup': 150,
             'ItemSoulPickup': 128,
@@ -86,25 +113,33 @@ class GameUnit(Unit):
             'RegenGlobe': 128
     }
 
-    _MERCUNITSNPC = { # Key is the name, value is the str multiplier
+    _MERCUNITSNPC = [
         # Garden Merc units
-            'MercDefenderSiegeGiant': 2,
-            'MercDefenderMeleeOgre': 1,
-            'MercDefenderRangedOgre': 1
-    }
+            'MercDefenderSiegeGiant', 'MercDefenderMeleeOgre', 'MercDefenderRangedOgre', 'JungleGraveGolemDefender']
 
     _MERCUNITSTEAM = {
         'MercLanerMeleeOgre': 1,
-        'MercLanerSiegeGiant': 2,
-        'MercLanerRangedOgre': 1
+        'MercLanerSiegeGiant': 2.5,
+        'MercLanerRangedOgre': 1,
+        'JungleGraveGolemLaner': 10,
+        # TODO move to own list as map event
+        'SoulEaterMinion': 1.75,
+        'SoulEater': 3
     }
 
+    _ADVANCEDUNIT = {'CatapultMinion': 2}
+
+
+    _NORMALUNIT = {'FootmanMinion': 0.25,
+                   'WizardMinion': 0.25,
+                   'RangedMinion': 0.25
+                }
     def __init__(self):
         # General Data
         self.internalName = '' #Unit Name
         self.bornAt = None # Seconds into the game when it was created
         self.bornAtGameLoops = None
-        self.diedAt = None # Seconds into the game when it was destroyed
+        self.diedAt = -1 # Seconds into the game when it was destroyed (-1 means never died)
         self.diedAtGameLoops = None
         self.team = None # The team this unit belongs to
         self.gameLoopsAlive = -1 # -1 means never died.
@@ -116,6 +151,10 @@ class GameUnit(Unit):
         self.killerTagIndex = None
         self.killerTagRecycle = None
         self.killerPlayerId = None
+        self.ownerList = [] # contains a list of tuples (a, b) where a = owner team and b = gameloop of ownership event
+        self.clickerList = [] # contains a list of tuples (a, b) where a = clicker and b = GameLoop of the click event
+        self.heroData = None
+
 
 
     def is_map_resource(self):
@@ -128,11 +167,46 @@ class GameUnit(Unit):
         return False
 
     def is_mercenary(self):
-        return self.internalName in GameUnit._MERCUNITSNPC
+        return self.internalName in GameUnit._MERCUNITSNPC or self.internalName in GameUnit._MERCUNITSTEAM
 
+    def is_hired_mercenary(self):
+        return self.internalName in GameUnit._MERCUNITSTEAM
 
+    def is_beacon(self):
+        return self.internalName in GameUnit._BEACONUNIT
 
+    def is_tribute(self):
+        return self.internalName in GameUnit._TRIBUTEUNIT
+
+    def get_tribute_controller(self):
+        """
+        Gets the team that controlled the tribute. None if the unit is not a tribute
+        """
+        if not self.is_tribute() or len(self.clickerList) == 0:
+            return None
+        return self.clickerList[len(self.clickerList) - 1][0]
+
+    def is_advanced_unit(self):
+        return self.internalName in GameUnit._ADVANCEDUNIT
+
+    def get_death_time(self, total_time):
+        return self.diedAt if self.diedAt > 0 else total_time
+
+    def get_strength(self):
+        if self.is_hired_mercenary():
+            return GameUnit._MERCUNITSTEAM[self.internalName]
+        elif self.is_advanced_unit():
+            return GameUnit._ADVANCEDUNIT[self.internalName]
+        elif self.internalName in GameUnit._NORMALUNIT:
+            return GameUnit._NORMALUNIT[self.internalName]
+        else:
+            return 0
 
     def __str__(self):
-      return "%s\t%s\t(%s)\tcreated: %d s\tdied: %s s\tlifespan: %s gls\tpicked? (%s)\tkilledby: %s" \
-                  % (self.unitTag, self.internalName, self.team, self.bornAt, self.diedAt, self.gameLoopsAlive, self.was_picked(), self.killerPlayerId)
+        val = "%s\t%s\t(%s)\tcreated: %d s (%d,%d) \tdied: %s s\tlifespan: %s gls\tpicked? (%s)\tkilledby: %s" \
+                  % (self.unitTag, self.internalName, self.team, self.bornAt, self.bornAtX, self.bornAtY, self.diedAt, self.gameLoopsAlive, self.was_picked(), self.killerPlayerId)
+        if len(self.ownerList) > 0:
+            val += "\tOwners: %s" % self.ownerList
+        if len(self.clickerList) > 0:
+            val += "\tTaken by: %s" % (self.get_tribute_controller())
+        return val

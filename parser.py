@@ -1,10 +1,12 @@
 __author__ = 'Rodrigo Duenas, Cristian Orellana'
+# from __future__ import print_function
 
 from s2protocol import protocol34835
 from s2protocol.mpyq import mpyq
 from replay import *
-import sys
 import argparse
+import json
+import uuid
 
 def processEvents(protocol=None, replayFile=None):
     """"
@@ -12,64 +14,61 @@ def processEvents(protocol=None, replayFile=None):
     Receives the protocol and the replayFile as an mpyq file object
     """
     if not protocol or not replayFile:
-        print "Error - Protocol and replayFire are needed"
+        print "Error - Protocol and replayFile are needed"
         return -1
 
     # Pre parse preparation go here
     eh = Replay(protocol, replayFile)
 
+    replayUuid = uuid.uuid1()
+
     eh.process_replay_details()
     eh.process_replay_header()
+
 
     print "\n === Map Info ==="
 
     print eh.replayInfo
+
+    eh.process_replay()
+
+    eh.process_replay_attributes()
 
     print "\n === Players ==="
 
     for player in eh.get_players_in_game():
       print player
 
-    eh.process_replay()
-
-    pickedGemsPerTeam = [0, 0]
-    armyStr = {} # key = team, value = dict with key = seconds and value = armystr
 
 
-
-
-    print "\n ==== Units ===="
-
-
-
-    for unit in eh.units_in_game():
-        armyStr[unit.team] = {unit}
-        print unit
-
-
-      #if unit.is_map_resource():
-        # print unit
-      #  print unit.internalName
-        #pickedGemsPerTeam[unit.team] += 1
 
     print "\n ==== Heroes ===="
-    print "%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % ("Name", "InternalName", "IsHuman", "PlayerId", "Team", "UnitTag")
+    print "%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % ("Name", "InternalName", "IsHuman", "PlayerId", "Team", "UnitTag","Death Count")
 
     for hero in eh.heroes_in_game():
       print hero
 
+
+    print "\n === Clicked Units ==="
+
+    for unit in eh.get_clicked_units():
+        print unit
+
     print "\n ==== Summary ===="
 
-    print "Picked Gems:\t%s" % (pickedGemsPerTeam)
 
+    eh.calculate_game_strength()
 
-    # for unit in
+    f = open('replay-results/' + str(replayUuid) + '.armystr.json', 'w')
 
+    f.write(json.dumps([
+      { "key": "Team 1", "values": eh.army_strength[0] },
+      { "key": "Team 2", "values": eh.army_strength[1] }
+    ]))
 
-    #for index in eh.heroList:
-        #print "%s: %s" % (eh.heroList[index].internalName, eh.heroList[index].deathCount)
-        #keys = eh.heroList[hero].deathList.keys()
-        #print eh.unitsInGame[eh.heroList[hero].deathList[keys[0]]['killerUnitIndex']]
+    f.close()
+
+    print "\nUUID: " + str(replayUuid)
 
 
 
