@@ -34,14 +34,22 @@ class Replay():
 
 
       self.players = {}
+      totalHumans = 0
 
       for player in details['m_playerList']:
+        toonHandle = '-'.join([str(player['m_toon']['m_region']),player['m_toon']['m_programId'],str(player['m_toon']['m_realm']),str(player['m_toon']['m_id'])])
         id = player['m_workingSetSlotId']
         team = player['m_teamId']
         hero = player['m_hero']
         name = player['m_name']
-        toonHandle = '-'.join([str(player['m_toon']['m_region']),player['m_toon']['m_programId'],str(player['m_toon']['m_realm']),str(player['m_toon']['m_id'])])
-        self.players[player['m_workingSetSlotId']] = Player(id, team, name, hero, toonHandle)
+        if (player['m_toon']['m_region'] != 0):
+            userId = totalHumans
+            totalHumans += 1
+        else:
+            userId = -1
+        gameResult = int(player['m_result'])
+
+        self.players[player['m_workingSetSlotId']] = Player(id, userId, team, name, hero, gameResult,  toonHandle)
 
 
     def process_replay_header(self):
@@ -172,4 +180,5 @@ class Replay():
         ability = getAbilities(event)
         if ability:
             # update hero stat
-            self.heroList[ability.userId].castedAbilities[ability.castedAtGameLoops] = ability
+            playerId = findPlayerKeyFromUserId(self.players, ability.userId)
+            self.heroList[playerId].castedAbilities[ability.castedAtGameLoops] = ability

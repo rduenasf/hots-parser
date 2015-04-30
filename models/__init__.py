@@ -25,6 +25,7 @@ class HeroUnit(Unit):
         self.internalName = ''
         self.isHuman = False
         self.playerId = None
+        self.userId = None
         self.team = None
         self.unitTag = None
         self.unitTagRecycle = None
@@ -51,7 +52,7 @@ class HeroUnit(Unit):
 
 
     def __str__(self):
-        return "%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % (self.name, self.internalName, self.isHuman, self.playerId, self.team, self.unitTag, self.deathCount, self.get_total_casted_abilities())
+        return "%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % (self.name, self.internalName, self.isHuman, self.playerId, self.userId, self.team, self.unitTag, self.deathCount, self.get_total_casted_abilities())
 
     def get_total_casted_abilities(self):
         return len(self.castedAbilities)
@@ -83,22 +84,34 @@ class HeroReplay():
 
 class Player():
 
-    def __init__(self, id, team, name, hero, toonHandle):
+    def __init__(self, id, userId, team, name, hero, gameResult, toonHandle):
         self.id = id
+        self.userId = userId
         self.team = team
         self.name = name
         self.hero = hero
         self.heroLevel = 1
         self.toonHandle = toonHandle
+        self.gameResult = gameResult
 
     def __str__(self):
-      return "%10s\t%10s\t%10s\t%12s\t%10s\t%15s" % (self.id,
+      return "%10s\t%10s\t%10s\t%12s\t%10s\t%15s\t%15s" % (self.id,
         self.team,
         self.hero,
         self.name,
         self.heroLevel,
+        self.is_winner(),
         self.toonHandle
       )
+
+    def is_winner(self):
+        return self.gameResult == 1
+
+    def is_loser(self):
+        return self.gameResult == 2
+
+    def is_tied(self):
+        return self.gameResult == 3
 
 class GameUnit(Unit):
 
