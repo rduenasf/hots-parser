@@ -43,10 +43,14 @@ def processEvents(protocol=None, replayFile=None):
 
 
     print "\n ==== Heroes ===="
-    print "%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % ("Name", "InternalName", "IsHuman", "PlayerId", "Team", "UnitTag","Death Count")
+    print "%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % ("Name", "InternalName", "IsHuman", "PlayerId", "UserId", "Team", "UnitTag","Death Count","Casted Abilities")
 
     for hero in eh.heroes_in_game():
-      print hero
+        print hero
+        # if hero.get_total_casted_abilities() > 0:
+        #     print "\t\tCasted Abilities:"
+        #     for gameLoop in hero.castedAbilities.keys():
+        #         print "\t\t\t GL: %d, AbilId: %d" % (gameLoop, hero.castedAbilities[gameLoop].abilityTag)
 
 
     print "\n === Clicked Units ==="
