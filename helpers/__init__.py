@@ -110,8 +110,6 @@ def getHeroDeathsFromReplayEvt(e, heroList):
     playerId = findHeroKeyFromTag(heroList, deadUnitTag)
 
     if e['_event'] == 'NNet.Replay.Tracker.SUnitDiedEvent' and playerId is not None:
-        if deadUnitTag == 50855937:
-            print playerId
 
         if e['m_killerUnitTagIndex']:
             killerUnitTag = (e['m_killerUnitTagIndex'] << 18) + e['m_killerUnitTagRecycle']
