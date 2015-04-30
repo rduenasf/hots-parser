@@ -52,16 +52,26 @@ def processEvents(protocol=None, replayFile=None):
         #     for gameLoop in hero.castedAbilities.keys():
         #         print "\t\t\t GL: %d, AbilId: %d" % (gameLoop, hero.castedAbilities[gameLoop].abilityTag)
 
+    # for hero in eh.heroes_in_game():
+    #     print "Hero: %s" % hero.name
+    #     for gl in hero.pickedTalents.keys():
+    #         print "\t%s" % hero.pickedTalents[gl]
 
-    print "\n === Clicked Units ==="
-
-    for unit in eh.get_clicked_units():
-        print unit
+    # print "\n === Clicked Units ==="
+    #
+    # for unit in eh.get_clicked_units():
+    #     print unit
 
     print "\n ==== Summary ===="
 
 
     eh.calculate_game_strength()
+    eh.setTeamsLevel()
+
+    print "\n === Teams ==="
+    print "%15s\t%15s\t%15s\t%15s\t%15s" % ("Id", "Est. Level", "Winner?", "Loser?", "Tied?")
+    print eh.team0
+    print eh.team1
 
     f = open('replay-results/' + str(replayUuid) + '.armystr.json', 'w')
 

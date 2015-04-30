@@ -1,5 +1,26 @@
 __author__ = 'Rodrigo Duenas, Cristian Orellana'
 
+from collections import OrderedDict
+
+class Team():
+    def __init__(self):
+        self.id = None
+        self.level = 0
+        self.memberList = list()
+        self.isWinner = None
+        self.isLoser = None
+        self.isTied = None
+
+    def get_total_members(self):
+        return len(self.memberList)
+
+    def __str__(self):
+        return "%15s\t%15s\t%15s\t%15s\t%15s" % (self.id, self.level, self.isWinner, self.isLoser, self.isTied)
+
+#    def get_level(self):
+
+
+
 class Unit():
 
     def __init__(self):
@@ -30,6 +51,8 @@ class HeroUnit(Unit):
         self.unitTag = None
         self.unitTagRecycle = None
         self.unitTagIndex = None
+        self.pickedTalents = OrderedDict() # Key = Gameloop, data = talent name
+        self._lastTalentTierLen = 0
 
 
         # Metrics
@@ -56,6 +79,9 @@ class HeroUnit(Unit):
 
     def get_total_casted_abilities(self):
         return len(self.castedAbilities)
+
+    def get_total_picked_talents(self):
+        return len(self.pickedTalents)
 
 
 class HeroReplay():
@@ -258,3 +284,5 @@ class TargetUnitAbility(BaseAbility):
         self.targetUnitTag = None
         self.targetPlayerId = None
         self.targetTeamId = None
+
+

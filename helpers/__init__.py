@@ -1,5 +1,6 @@
 
 from models import *
+from data import *
 import datetime
 import json
 
@@ -17,7 +18,8 @@ def win_timestamp_to_date(timestamp=None, date_format='%Y-%m-%d %H:%M:%S'):
 def getHeroes(e, players):
     """
     Parse the event and looks if the unit created is a hero or not
-    if so, adds a new hero to the heroList
+    if so, adds a new hero to the heroList.
+    Also creates/updates the team of the hero.
     """
 
     # if a new hero unit is born
@@ -28,11 +30,12 @@ def getHeroes(e, players):
         hero.playerId = playerId
         hero.name = players[playerId].hero
         hero.team = players[playerId].team
-        hero.userId = players[playerId].userId
+        hero.userId = e['m_upkeepPlayerId'] - 1
         hero.internalName = e['m_unitTypeName'][4:]
         hero.unitTagIndex = e['m_unitTagIndex']
         hero.unitTagRecycle = e['m_unitTagRecycle']
         hero.unitTag = hero.unit_tag()
+
 
         return hero
 
@@ -159,7 +162,7 @@ def getAbilities(e):
 
             return tua
 
-        elif not e['m_data']['None']:
+        elif e['m_data'].get('None'):
             abil = BaseAbility()
             abil.abilityTag = e['m_abil']['m_abilLink'] << 5 | e['m_abil']['m_abilCmdIndex']
             abil.castedAtGameLoops = e['_gameloop']
@@ -208,15 +211,4 @@ def getUnitsInGame(e):
         unit.bornAtY = e['m_y']
 
         return unit
-
-
-def getTalentSelected(proto, content):
-    total = 0
-    talentSelectEvents = proto.decode_replay_game_events(content)
-    for tse in talentSelectEvents:
-        if tse['_event'] == 'NNet.Game.SHeroTalentTreeSelectedEvent':
-            print tse
-            total += 1
-
-    print total
 

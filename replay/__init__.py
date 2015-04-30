@@ -1,4 +1,5 @@
 from helpers import *
+from data import *
 
 
 class Replay():
@@ -10,10 +11,13 @@ class Replay():
 
     replayInfo = HeroReplay()
 
+
     unitsInGame = {}
     heroActions = {} # this is a dictionary , the key is the hero indexId, the value is a list of tuples
                     # (secsInGame, action)
     heroList = {} # key = playerId - content = hero instance
+    team0 = Team()
+    team1 = Team()
     heroDeathsList = list()
     abilityList = list()
 
@@ -75,6 +79,8 @@ class Replay():
       return self.players.itervalues()
 
 
+
+
     def process_replay(self):
       for meta in self.EVENT_FILES:
         contents = self.replayFile.read_file(meta)
@@ -122,6 +128,18 @@ class Replay():
           if unit.is_mercenary():
             self.merc_strength[unit.team][second][1] += unit.get_strength()
 
+    def setTeamsLevel(self):
+
+        if len(self.team0.memberList) > 0:
+        # Team 0
+            maxTalentSelected = max([len(self.heroList[x].pickedTalents) for x in self.heroList if self.heroList[x].team == 0])
+            self.team0.level = num_choices_to_level[maxTalentSelected]
+        # Team 1
+        elif len(self.team1.memberList) > 0:
+            maxTalentSelected = max([len(self.heroList[x].pickedTalents) for x in self.heroList if self.heroList[x].team == 1])
+            self.team1.level = num_choices_to_level[maxTalentSelected]
+
+
 
     def NNet_Replay_Tracker_SUnitBornEvent(self, event):
         """
@@ -133,13 +151,30 @@ class Replay():
         # Populate Heroes
         hero = getHeroes(event, self.players)
         if hero:
-          self.heroList[hero.playerId] = hero
+            self.heroList[hero.playerId] = hero
+            # create/update team
+            if hero.team == 0:
+                if hero.playerId not in self.team0.memberList:
+                    self.team0.memberList.append(hero.playerId)
+                    if self.team0.isWinner is None:
+                        self.team0.id = self.players[hero.playerId].team
+                        self.team0.isWinner = self.players[hero.playerId].is_winner()
+                        self.team0.isLoser = self.players[hero.playerId].is_loser()
+                        self.team0.isTied = self.players[hero.playerId].is_tied()
+
+            elif hero.team == 1:
+                if hero.playerId not in self.team1.memberList:
+                    self.team1.memberList.append(hero.playerId)
+                    if self.team1.isWinner is None:
+                        self.team1.id = self.players[hero.playerId].team
+                        self.team1.isWinner = self.players[hero.playerId].is_winner()
+                        self.team1.isLoser = self.players[hero.playerId].is_loser()
+                        self.team1.isTied = self.players[hero.playerId].is_tied()
 
         # Populate unitsInGame
         unit = getUnitsInGame(event)
         if unit:
-          self.unitsInGame[unit.unitTag] = unit
-
+            self.unitsInGame[unit.unitTag] = unit
 
 
 
@@ -149,7 +184,7 @@ class Replay():
         if event['_event'] != 'NNet.Replay.Tracker.SUnitDiedEvent':
             return None
 
-        getHeroDeathsFromReplayEvt(event, self.heroList)
+        #getHeroDeathsFromReplayEvt(event, self.heroList)
         getUnitDestruction(event, self.unitsInGame)
 
 
@@ -182,3 +217,40 @@ class Replay():
             # update hero stat
             playerId = findPlayerKeyFromUserId(self.players, ability.userId)
             self.heroList[playerId].castedAbilities[ability.castedAtGameLoops] = ability
+
+
+    def NNet_Game_SHeroTalentTreeSelectedEvent(self, event):
+        if event['_event'] != 'NNet.Game.SHeroTalentTreeSelectedEvent':
+            return None
+
+        playerId = event['_userid']['m_userId'] #findPlayerKeyFromUserId(self.players, event['_userid']['m_userId'])
+        hero = self.heroList[playerId]
+        heroName = hero.internalName
+
+
+        #talentName = hero_talent_options[heroName][event['m_index']][0]
+        hero.pickedTalents[event['_gameloop']] = event['m_index']
+
+
+
+
+
+
+
+        # totalPickedTalents = hero.get_total_picked_talents()
+        # talentIndex = 1 + event['m_index'] - hero._lastTalentTierLen
+        #
+        # # if talentIndex < 0:
+        # #     print "Getting talent index %s total %s (%s) %s" % (talentIndex, totalPickedTalents, heroName, playerId)
+        # #     print "m_index: %s lastTalentTierLen: %s TalentIndex: %s" % ( event['m_index'], hero._lastTalentTierLen, talentIndex)
+        # #     #return 0
+        # # if talentIndex > len(hero_talent_options[heroName][totalPickedTalents][1]) - 1:
+        # #     print "Getting talent index %s total %s (%s) %s" % (talentIndex, totalPickedTalents, heroName, playerId)
+        # #     print "m_index: %s lastTalentTierLen: %s TalentIndex: %s" % ( event['m_index'], hero._lastTalentTierLen, talentIndex)
+        # #     #return 0
+        # try:
+        #
+        # except IndexError, e:
+        #     print "Getting talent index %s total %s (%s) %s" % (talentIndex, totalPickedTalents, heroName, playerId)
+        #     print "m_index: %s lastTalentTierLen: %s TalentIndex: %s" % ( event['m_index'], hero._lastTalentTierLen, talentIndex)
+
