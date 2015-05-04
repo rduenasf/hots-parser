@@ -1,3 +1,4 @@
+__author__ = 'Rodrigo Duenas, Cristian Orellana'
 from helpers import *
 from data import *
 
@@ -67,12 +68,15 @@ class Replay():
 
         # Get if players are human or not
         for playerId in attributes['scopes'].keys():
-            if playerId <= 10:
+            if playerId <= len(self.heroList):
                 self.heroList[playerId - 1].isHuman = (attributes['scopes'][playerId][500][0]['value'] == 'Humn')
 
         # If player is human, get the level this player has for the selected hero
                 if self.heroList[playerId - 1].isHuman:
                     self.players[playerId - 1].heroLevel = attributes['scopes'][playerId][4008][0]['value']
+
+        # Get game type
+        self.replayInfo.gameType = attributes['scopes'][16][3009][0]['value']
 
 
     def get_players_in_game(self):
@@ -118,11 +122,15 @@ class Replay():
       ]
 
       for unit in self.units_in_game():
-        if unit.team not in [0,1]:
+        if unit.team not in [0,1] and (not unit.is_army_unit() or not unit.is_hired_mercenary() or not unit.is_advanced_unit()):
           continue
 
         end = unit.get_death_time(self.replayInfo.durations_in_secs())
+        # if end > self.replayInfo.durations_in_secs():
+        #     continue
+            # end = self.replayInfo.durations_in_secs()
         for second in xrange(unit.bornAt, end):
+          #print "army_strength[%s][%s][1]" % (unit.team, second)
           self.army_strength[unit.team][second][1] += unit.get_strength()
 
           if unit.is_mercenary():
@@ -135,7 +143,7 @@ class Replay():
             maxTalentSelected = max([len(self.heroList[x].pickedTalents) for x in self.heroList if self.heroList[x].team == 0])
             self.team0.level = num_choices_to_level[maxTalentSelected]
         # Team 1
-        elif len(self.team1.memberList) > 0:
+        if len(self.team1.memberList) > 0:
             maxTalentSelected = max([len(self.heroList[x].pickedTalents) for x in self.heroList if self.heroList[x].team == 1])
             self.team1.level = num_choices_to_level[maxTalentSelected]
 
@@ -160,7 +168,6 @@ class Replay():
                         self.team0.id = self.players[hero.playerId].team
                         self.team0.isWinner = self.players[hero.playerId].is_winner()
                         self.team0.isLoser = self.players[hero.playerId].is_loser()
-                        self.team0.isTied = self.players[hero.playerId].is_tied()
 
             elif hero.team == 1:
                 if hero.playerId not in self.team1.memberList:
@@ -169,12 +176,13 @@ class Replay():
                         self.team1.id = self.players[hero.playerId].team
                         self.team1.isWinner = self.players[hero.playerId].is_winner()
                         self.team1.isLoser = self.players[hero.playerId].is_loser()
-                        self.team1.isTied = self.players[hero.playerId].is_tied()
+
 
         # Populate unitsInGame
         unit = getUnitsInGame(event)
-        if unit:
+        if unit: #There is a bug in the replay where random units are created at game loop 4294996406
             self.unitsInGame[unit.unitTag] = unit
+
 
 
 

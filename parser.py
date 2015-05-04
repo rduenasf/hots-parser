@@ -7,6 +7,9 @@ from replay import *
 import argparse
 import json
 import uuid
+import time
+from utils.db import DB
+
 
 def processEvents(protocol=None, replayFile=None):
     """"
@@ -18,21 +21,24 @@ def processEvents(protocol=None, replayFile=None):
         return -1
 
     # Pre parse preparation go here
+
     eh = Replay(protocol, replayFile)
 
     replayUuid = uuid.uuid1()
 
     eh.process_replay_details()
+
     eh.process_replay_header()
+
+    start_time = time.time()
+    eh.process_replay()
+    print("--- %s seconds ---" % (time.time() - start_time))
+    eh.process_replay_attributes()
 
 
     print "\n === Map Info ==="
 
     print eh.replayInfo
-
-    eh.process_replay()
-
-    eh.process_replay_attributes()
 
     print "\n === Players ==="
 
@@ -69,18 +75,27 @@ def processEvents(protocol=None, replayFile=None):
     eh.setTeamsLevel()
 
     print "\n === Teams ==="
-    print "%15s\t%15s\t%15s\t%15s\t%15s" % ("Id", "Est. Level", "Winner?", "Loser?", "Tied?")
+    print "%15s\t%15s\t%15s\t%15s" % ("Id", "Est. Level", "Winner?", "Loser?")
     print eh.team0
     print eh.team1
 
-    f = open('replay-results/' + str(replayUuid) + '.armystr.json', 'w')
+    #f = open('replay-results/' + str(replayUuid) + '.armystr.json', 'w')
 
-    f.write(json.dumps([
+    db = DB(host='rduenasf.synology.me', user='hots', passwd='nimanimero', db='hots' ) # TODO move to config
+    cursor = db.conn.cursor()
+
+
+    armyData = json.dumps([
       { "key": "Team 1", "values": eh.army_strength[0] },
       { "key": "Team 2", "values": eh.army_strength[1] }
-    ]))
+    ])
 
-    f.close()
+    statement = "INSERT INTO army_str (uuid, armyData) VALUES ('%s', '%s')" % (replayUuid, armyData)
+    cursor.execute(statement)
+    db.conn.commit ()
+
+
+    #f.close()
 
     print "\nUUID: " + str(replayUuid)
 

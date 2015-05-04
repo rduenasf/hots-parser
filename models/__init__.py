@@ -9,13 +9,13 @@ class Team():
         self.memberList = list()
         self.isWinner = None
         self.isLoser = None
-        self.isTied = None
+
 
     def get_total_members(self):
         return len(self.memberList)
 
     def __str__(self):
-        return "%15s\t%15s\t%15s\t%15s\t%15s" % (self.id, self.level, self.isWinner, self.isLoser, self.isTied)
+        return "%15s\t%15s\t%15s\t%15s" % (self.id, self.level, self.isWinner, self.isLoser)
 
 #    def get_level(self):
 
@@ -71,7 +71,7 @@ class HeroUnit(Unit):
         self.capturedTributes = 0 # Number of tributes captured by this hero in the Curse map
         self.capturedMercCamps = 0
         self.capturedBeaconTowers = 0
-        self.castedAbilities = {} # key = gameloops when the ability was casted, value = ability instance
+        self.castedAbilities = OrderedDict() # key = gameloops when the ability was casted, value = ability instance
 
 
     def __str__(self):
@@ -91,6 +91,7 @@ class HeroReplay():
         self.startTime = None # UTC
         self.gameLoops = None # duration of the game in gameloops
         self.speed = None
+        self.gameType = None
 
     def durations_in_secs(self):
         if self.gameLoops:
@@ -99,11 +100,12 @@ class HeroReplay():
             return 0
 
     def __str__(self):
-        return "Title: %s\nStarted at: %s\nDuration (min/gl): %d/%d\nSpeed: %s" % (self.map,
+        return "Title: %s\nStarted at: %s\nDuration (min/gl): %d/%d\nSpeed: %s\nGame Type: %s" % (self.map,
         self.startTime,
         self.durations_in_secs()/60,
         self.gameLoops,
-        self.speed
+        self.speed,
+        self.gameType
       )
 
 
@@ -136,8 +138,6 @@ class Player():
     def is_loser(self):
         return self.gameResult == 2
 
-    def is_tied(self):
-        return self.gameResult == 3
 
 class GameUnit(Unit):
 
@@ -214,6 +214,9 @@ class GameUnit(Unit):
     def is_hired_mercenary(self):
         return self.internalName in GameUnit._MERCUNITSTEAM
 
+    def is_army_unit(self):
+        return self.internalName in GameUnit._NORMALUNIT and self.internalName not in GameUnit._PICKUNITS
+
     def is_beacon(self):
         return self.internalName in GameUnit._BEACONUNIT
 
@@ -239,7 +242,7 @@ class GameUnit(Unit):
             return GameUnit._MERCUNITSTEAM[self.internalName]
         elif self.is_advanced_unit():
             return GameUnit._ADVANCEDUNIT[self.internalName]
-        elif self.internalName in GameUnit._NORMALUNIT:
+        elif self.is_army_unit():
             return GameUnit._NORMALUNIT[self.internalName]
         else:
             return 0

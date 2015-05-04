@@ -1,12 +1,22 @@
-
+__author__ = 'Rodrigo Duenas, Cristian Orellana'
 from models import *
-from data import *
 import datetime
 import json
 
 
+def get_seconds_from_gameloop(e):
+    return int((e['_gameloop'] % 2**32)/16)
 
-#def getArmyStr()
+def get_gameloops(e):
+    return (e['_gameloop'] % 2**32)
+
+def get_unit_tag(e):
+    return (e['m_unitTagIndex'] << 18) + e['m_unitTagRecycle']
+
+def get_ability_tag(e):
+    return e['m_abil']['m_abilLink'] << 5 | e['m_abil']['m_abilCmdIndex']
+
+
 
 def win_timestamp_to_date(timestamp=None, date_format='%Y-%m-%d %H:%M:%S'):
     if timestamp:
@@ -45,9 +55,9 @@ def getUnitOwners(e, unitsInGame):
     Get the owner of the unit and the time the unit was owned.
     """
     if e['_event'] == 'NNet.Replay.Tracker.SUnitOwnerChangeEvent' and e['m_upkeepPlayerId'] in (11, 12):
-        unitTag = (e['m_unitTagIndex'] << 18) + e['m_unitTagRecycle']
+        unitTag = get_unit_tag(e)
         owner = e['m_upkeepPlayerId'] - 11
-        ownerTuple = (owner, int(e['_gameloop']/16))
+        ownerTuple = (owner, get_seconds_from_gameloop(e))
         unitsInGame[unitTag].ownerList.append(ownerTuple)
 
 def getUnitClicked(e, unitsInGame):
@@ -60,7 +70,7 @@ def getUnitClicked(e, unitsInGame):
         if unitTag in unitsInGame.keys():
             if unitsInGame[unitTag].is_tribute():
                 playerId = e['_userid']['m_userId']
-                clickTuple = (playerId, int(e['_gameloop']/16))
+                clickTuple = (playerId, get_seconds_from_gameloop(e))
                 unitsInGame[unitTag].clickerList.append(clickTuple)
 
 
@@ -69,10 +79,10 @@ def getUnitDestruction(e, unitsInGame):
     Gets information when a non-hero unit is destroyed
     """
     if e['_event'] == 'NNet.Replay.Tracker.SUnitDiedEvent':
-        deadUnitTag = (e['m_unitTagIndex'] << 18) + e['m_unitTagRecycle']
+        deadUnitTag = get_unit_tag(e)
         try:
-            unitsInGame[deadUnitTag].diedAt = int(e['_gameloop']/16)
-            unitsInGame[deadUnitTag].diedAtGameLoops = e['_gameloop']
+            unitsInGame[deadUnitTag].diedAt = get_seconds_from_gameloop(e)
+            unitsInGame[deadUnitTag].diedAtGameLoops =get_gameloops(e)
             unitsInGame[deadUnitTag].gameLoopsAlive = unitsInGame[deadUnitTag].diedAtGameLoops - unitsInGame[deadUnitTag].bornAtGameLoops
             unitsInGame[deadUnitTag].killerPlayerId = e['m_killerPlayerId']
 
@@ -109,33 +119,52 @@ def getHeroDeathsFromReplayEvt(e, heroList):
     Parse the event and looks if a hero unit was destroyed, if so, adds a new entry to the deathList
     """
 
-    deadUnitTag = (e['m_unitTagIndex'] << 18) + e['m_unitTagRecycle']
+    deadUnitTag = get_unit_tag(e)
     playerId = findHeroKeyFromTag(heroList, deadUnitTag)
 
     if e['_event'] == 'NNet.Replay.Tracker.SUnitDiedEvent' and playerId is not None:
 
+        seconds = get_seconds_from_gameloop(e)
+
         if e['m_killerUnitTagIndex']:
-            killerUnitTag = (e['m_killerUnitTagIndex'] << 18) + e['m_killerUnitTagRecycle']
+            killerUnitTag = get_unit_tag(e)
             heroDeathEvent = {'killerPlayerId': e['m_killerPlayerId'], 'killerUnitIndex': killerUnitTag}
-            heroList[playerId].deathList[int(e['_gameloop']/16)] = heroDeathEvent
+            heroList[playerId].deathList[seconds] = heroDeathEvent
             heroList[playerId].deathCount += 1
         else:
             # There is a bug that cause m_killerUnitTagIndex and m_killerUnitTagRecycle to be null
             heroDeathEvent = {'killerPlayerId': e['m_killerPlayerId'], 'killerUnitIndex': None}
-            heroList[playerId].deathList[int(e['_gameloop']/16)] = heroDeathEvent
+            heroList[playerId].deathList[seconds] = heroDeathEvent
             heroList[playerId].deathCount += 1
+
+
+def getClickedPoints(e):
+    if e['m_event'] != 'NNet.Game.SCmdUpdateTargetPointEvent':
+        return None
+
+    if e['m_target']:
+        tpa = TargetPointAbility()
+        tpa.abilityTag = get_ability_tag(e)
+        tpa.castedAt = get_seconds_from_gameloop(e)
+        tpa.userId = e['_userid']['m_userId']
+        tpa.castedAtGameLoops = e['_gameloop']
+        tpa.x = e['m_data']['TargetPoint']['x']/4096.0
+        tpa.y = e['m_data']['TargetPoint']['y']/4096.0
+        tpa.z = e['m_data']['TargetPoint']['z']/4096.0
+
+    # {"_eventid": 104, "_event": "NNet.Game.SCmdUpdateTargetPointEvent", "_bits": 104, "m_target": {"y": 517441, "x": 145672, "z": 41560}, "_gameloop": 274, "_userid": {"m_userId": 0}}
 
 def getAbilities(e):
     """
-    This function read an NNet.Game.SCmdEvent and gets relevant information
+    This function is called during a NNet.Game.SCmdEvent, NNet.Game.SCommandManagerStateEvent
 
     """
 
     if e['m_abil']: # If this is an actual user available ability
         if e['m_data'].get('TargetPoint'):
             tpa = TargetPointAbility()
-            tpa.abilityTag = e['m_abil']['m_abilLink'] << 5 | e['m_abil']['m_abilCmdIndex']
-            tpa.castedAt = int(e['_gameloop'] / 16)
+            tpa.abilityTag = get_ability_tag(e)
+            tpa.castedAt = get_seconds_from_gameloop(e)
             tpa.userId = e['_userid']['m_userId']
             tpa.castedAtGameLoops = e['_gameloop']
             tpa.x = e['m_data']['TargetPoint']['x']/4096.0
@@ -149,8 +178,8 @@ def getAbilities(e):
 
         elif e['m_data'].get('TargetUnit'):
             tua = TargetUnitAbility()
-            tua.abilityTag = e['m_abil']['m_abilLink'] << 5 | e['m_abil']['m_abilCmdIndex']
-            tua.castedAt = int(e['_gameloop'] / 16)
+            tua.abilityTag = get_ability_tag(e)
+            tua.castedAt = get_seconds_from_gameloop(e)
             tua.userId = e['_userid']['m_userId']
             tua.castedAtGameLoops = e['_gameloop']
             tua.x = e['m_data']['TargetUnit']['m_snapshotPoint']['x']/4096.0
@@ -162,11 +191,11 @@ def getAbilities(e):
 
             return tua
 
-        elif e['m_data'].get('None'):
+        else: # e['m_data'].get('None'):
             abil = BaseAbility()
-            abil.abilityTag = e['m_abil']['m_abilLink'] << 5 | e['m_abil']['m_abilCmdIndex']
+            abil.abilityTag = get_ability_tag(e)
             abil.castedAtGameLoops = e['_gameloop']
-            abil.castedAt = int(e['_gameloop'] / 16)
+            abil.castedAt = get_seconds_from_gameloop(e)
             abil.userId =  e['_userid']['m_userId']
 
             return abil
@@ -185,7 +214,7 @@ def getHeroDeathsFromGameEvt(e, heroList):
         # find the hero
         playerId =  findHeroKeyFromUserId(heroList, (e['_userid']['m_userId']))
         unitTag = [key for (key, value) in sorted(heroList.items()) if value.playerId == playerId][0]
-        eventTime = int(e['_gameloop']/16)
+        eventTime = get_seconds_from_gameloop(e)
 
         if len(heroList[unitTag].deathList.keys()) > 0:
             if eventTime - int(heroList[unitTag].deathList.keys()[0]) > 12: # we need this to rule out the first event which is actually tracked
@@ -203,8 +232,8 @@ def getUnitsInGame(e):
         unit.unitTagIndex = e['m_unitTagIndex']
         unit.unitTagRecycle = e['m_unitTagRecycle']
         unit.unitTag = unit.unit_tag()
-        unit.bornAt = int(e['_gameloop']/16)
-        unit.bornAtGameLoops = e['_gameloop']
+        unit.bornAt = get_seconds_from_gameloop(e)
+        unit.bornAtGameLoops = get_gameloops(e)
         unit.internalName = e['m_unitTypeName']
         unit.team = e['m_upkeepPlayerId'] - 11
         unit.bornAtX = e['m_x']
