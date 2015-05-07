@@ -9,6 +9,7 @@ import json
 import uuid
 import time
 from utils.db import DB
+from os import walk, path
 
 
 def processEvents(protocol=None, replayFile=None):
@@ -41,12 +42,9 @@ def processEvents(protocol=None, replayFile=None):
     print eh.replayInfo
 
     print "\n === Players ==="
-
+    print "%10s\t%10s\t%10s\t%12s\t%10s\t%15s\t%15s" % ('Id', 'Team', 'Hero', 'Name', 'Level', 'Winner?', 'Handle')
     for player in eh.get_players_in_game():
-      print player
-
-
-
+        print player
 
     print "\n ==== Heroes ===="
     print "%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s\t%15s" % ("Name", "InternalName", "IsHuman", "PlayerId", "UserId", "Team", "UnitTag","Death Count","Casted Abilities")
@@ -102,9 +100,14 @@ def processEvents(protocol=None, replayFile=None):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('replay_file', help='.StormReplay file to load')
-    args = parser.parse_args()
-
-    replay = mpyq.MPQArchive(args.replay_file)
-    processEvents(protocol34835, replay)
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('replay_file', help='.StormReplay file to load')
+    # args = parser.parse_args()
+    #replay = mpyq.MPQArchive(args.replay_file)
+    for directory, dirnames, filenames in walk('/Users/cristiano/Others/log-crawler/download/'):
+        for file in filenames:
+            if file.endswith('StormReplay'):
+                file_path = path.join(directory, file)
+                replay = mpyq.MPQArchive(file_path)
+                print file_path
+                processEvents(protocol34835, replay)

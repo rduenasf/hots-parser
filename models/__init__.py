@@ -1,6 +1,8 @@
 __author__ = 'Rodrigo Duenas, Cristian Orellana'
 
 from collections import OrderedDict
+import datetime
+from helpers import *
 
 class Team():
     def __init__(self):
@@ -105,13 +107,18 @@ class HeroUnit(Unit):
 
 
 class HeroReplay():
-    def __init__(self):
+    def __init__(self, details):
         # General Data
         self.map = ''
         self.startTime = None # UTC
         self.gameLoops = None # duration of the game in gameloops
         self.speed = None
         self.gameType = None
+
+        self.map = details['m_title']
+        self.startTime = win_timestamp_to_date(details['m_timeUTC'])
+
+
 
     def durations_in_secs(self):
         if self.gameLoops:
@@ -132,15 +139,22 @@ class HeroReplay():
 
 class Player():
 
-    def __init__(self, id, userId, team, name, hero, gameResult, toonHandle):
-        self.id = id
-        self.userId = userId
-        self.team = team
-        self.name = name
-        self.hero = hero
+    def __init__(self, player):
+
+        self.userId = None
         self.heroLevel = 1
-        self.toonHandle = toonHandle
-        self.gameResult = gameResult
+        self.id = player['m_workingSetSlotId']
+        self.team = player['m_teamId']
+        self.hero = player['m_hero']
+        self.name = player['m_name']
+        self.isHuman = (player['m_toon']['m_region'] != 0)
+        self.gameResult = int(player['m_result'])
+        self.toonHandle = self.get_toon_handle(player)
+
+
+
+    def get_toon_handle(self, player):
+        return '-'.join([str(player['m_toon']['m_region']),player['m_toon']['m_programId'],str(player['m_toon']['m_realm']),str(player['m_toon']['m_id'])])
 
     def __str__(self):
       return "%10s\t%10s\t%10s\t%12s\t%10s\t%15s\t%15s" % (self.id,
@@ -196,18 +210,12 @@ class GameUnit(Unit):
                    'WizardMinion': 0.25,
                    'RangedMinion': 0.25
                 }
-    def __init__(self):
+    def __init__(self, e):
         # General Data
-        self.internalName = '' #Unit Name
-        self.bornAt = None # Seconds into the game when it was created
-        self.bornAtGameLoops = None
+
         self.diedAt = -1 # Seconds into the game when it was destroyed (-1 means never died)
         self.diedAtGameLoops = None
-        self.team = None # The team this unit belongs to
         self.gameLoopsAlive = -1 # -1 means never died.
-        self.unitTag = None
-        self.unitTagRecycle = None
-        self.unitTagIndex = None
         self.killerTeam = None
         self.killerTag = None
         self.killerTagIndex = None
@@ -216,6 +224,16 @@ class GameUnit(Unit):
         self.ownerList = [] # contains a list of tuples (a, b) where a = owner team and b = gameloop of ownership event
         self.clickerList = [] # contains a list of tuples (a, b) where a = clicker and b = GameLoop of the click event
         self.heroData = None
+
+        self.unitTagIndex = e['m_unitTagIndex']
+        self.unitTagRecycle = e['m_unitTagRecycle']
+        self.unitTag = self.unit_tag()
+        self.bornAt = get_seconds_from_gameloop(e) # Seconds into the game when it was created
+        self.bornAtGameLoops = get_gameloops(e)
+        self.internalName = e['m_unitTypeName'] # Internal unit name
+        self.team = e['m_upkeepPlayerId'] - 11 # The team this unit belongs to
+        self.bornAtX = e['m_x']
+        self.bornAtY = e['m_y']
 
 
 
@@ -255,7 +273,7 @@ class GameUnit(Unit):
         return self.internalName in GameUnit._ADVANCEDUNIT
 
     def get_death_time(self, total_time):
-        return self.diedAt if self.diedAt > 0 else total_time
+        return self.diedAt if (self.diedAt > 0) else total_time
 
     def get_strength(self):
         if self.is_hired_mercenary():
@@ -282,12 +300,12 @@ class BaseAbility():
     Base class for all abilities, has all the common attributes
     """
 
-    def __init__(self):
-        self.userId = None
-        self.castedAt = None
-        self.castedAtGameLoops = None
-        self.abilityTag = None
+    def __init__(self, event):
         self.abilityName = None
+        self.abilityTag = get_ability_tag(event)
+        self.castedAtGameLoops = event['_gameloop']
+        self.castedAt = get_seconds_from_gameloop(event)
+        self.userId = event['_userid']['m_userId']
 
     def __str__(self):
         return "%s" % self.abilityTag
@@ -295,17 +313,29 @@ class BaseAbility():
 
 class TargetPointAbility(BaseAbility):
 
-    def __init__(self):
-        self.x = None
-        self.y = None
-        self.z = None
+    def __init__(self, event):
+
+        self.abilityTag = get_ability_tag(event)
+        self.castedAt = get_seconds_from_gameloop(event)
+        self.userId = event['_userid']['m_userId']
+        self.castedAtGameLoops = event['_gameloop']
+        self.x = event['m_data']['TargetPoint']['x']/4096.0
+        self.y = event['m_data']['TargetPoint']['y']/4096.0
+        self.z = event['m_data']['TargetPoint']['z']/4096.0
 
 
 class TargetUnitAbility(BaseAbility):
 
-    def __init__(self):
-        self.targetUnitTag = None
-        self.targetPlayerId = None
-        self.targetTeamId = None
+    def __init__(self, event):
+        self.abilityTag = get_ability_tag(event)
+        self.castedAt = get_seconds_from_gameloop(event)
+        self.userId = event['_userid']['m_userId']
+        self.castedAtGameLoops = event['_gameloop']
+        self.x = event['m_data']['TargetUnit']['m_snapshotPoint']['x']/4096.0
+        self.y = event['m_data']['TargetUnit']['m_snapshotPoint']['y']/4096.0
+        self.z = event['m_data']['TargetUnit']['m_snapshotPoint']['z']/4096.0
+        self.targetPlayerId = event['m_data']['TargetUnit']['m_snapshotControlPlayerId']
+        self.targetTeamId = event['m_data']['TargetUnit']['m_snapshotUpkeepPlayerId']
+        self.targetUnitTag = event['m_data']['TargetUnit']['m_tag']
 
 

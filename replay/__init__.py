@@ -1,6 +1,7 @@
 __author__ = 'Rodrigo Duenas, Cristian Orellana'
 from helpers import *
 from data import *
+from models import *
 
 
 class Replay():
@@ -10,9 +11,7 @@ class Replay():
         'replay.game.events': 'decode_replay_game_events'
     }
 
-    replayInfo = HeroReplay()
-
-
+    replayInfo = None
     unitsInGame = {}
     heroActions = {} # this is a dictionary , the key is the hero indexId, the value is a list of tuples
                     # (secsInGame, action)
@@ -31,30 +30,20 @@ class Replay():
       self.replayFile = replayFile
 
     def process_replay_details(self):
-      contents = self.replayFile.read_file('replay.details')
-      details = self.protocol.decode_replay_details(contents)
+        contents = self.replayFile.read_file('replay.details')
+        details = self.protocol.decode_replay_details(contents)
 
-      self.replayInfo.map = details['m_title']
-      self.replayInfo.startTime = win_timestamp_to_date(details['m_timeUTC'])
-
-
-      self.players = {}
-      totalHumans = 0
-
-      for player in details['m_playerList']:
-        toonHandle = '-'.join([str(player['m_toon']['m_region']),player['m_toon']['m_programId'],str(player['m_toon']['m_realm']),str(player['m_toon']['m_id'])])
-        id = player['m_workingSetSlotId']
-        team = player['m_teamId']
-        hero = player['m_hero']
-        name = player['m_name']
-        if (player['m_toon']['m_region'] != 0):
-            userId = totalHumans
-            totalHumans += 1
-        else:
-            userId = -1
-        gameResult = int(player['m_result'])
-
-        self.players[player['m_workingSetSlotId']] = Player(id, userId, team, name, hero, gameResult,  toonHandle)
+        self.replayInfo = HeroReplay(details)
+        self.players = {}
+        totalHumans = 0
+        for player in details['m_playerList']:
+            p = Player(player)
+            if p.isHuman:
+                p.userId = totalHumans
+                totalHumans += 1
+            else:
+                p.userId = -1
+            self.players[player['m_workingSetSlotId']] = p
 
 
     def process_replay_header(self):
@@ -83,8 +72,6 @@ class Replay():
       return self.players.itervalues()
 
 
-
-
     def process_replay(self):
       for meta in self.EVENT_FILES:
         contents = self.replayFile.read_file(meta)
@@ -110,6 +97,7 @@ class Replay():
       return self.heroList.itervalues()
 
     def calculate_game_strength(self):
+      #print "TOTAL DURATION %s" % self.replayInfo.durations_in_secs()
       self.army_strength = [
         [[t, 0] for t in xrange(1, self.replayInfo.durations_in_secs() + 1)],
         [[t, 0] for t in xrange(1, self.replayInfo.durations_in_secs() + 1)]
@@ -131,10 +119,14 @@ class Replay():
             # end = self.replayInfo.durations_in_secs()
         for second in xrange(unit.bornAt, end):
           #print "army_strength[%s][%s][1]" % (unit.team, second)
-          self.army_strength[unit.team][second][1] += unit.get_strength()
+          try:
+              self.army_strength[unit.team][second][1] += unit.get_strength()
 
-          if unit.is_mercenary():
-            self.merc_strength[unit.team][second][1] += unit.get_strength()
+              if unit.is_mercenary():
+                self.merc_strength[unit.team][second][1] += unit.get_strength()
+          except IndexError:
+              # for some cosmic reason some events are happening after the game is over D:
+              pass
 
     def setTeamsLevel(self):
 
@@ -146,7 +138,6 @@ class Replay():
         if len(self.team1.memberList) > 0:
             maxTalentSelected = max([len(self.heroList[x].pickedTalents) for x in self.heroList if self.heroList[x].team == 1])
             self.team1.level = num_choices_to_level[maxTalentSelected]
-
 
 
     def NNet_Replay_Tracker_SUnitBornEvent(self, event):
@@ -166,14 +157,13 @@ class Replay():
                     if hero.playerId not in self.team0.memberList:
                         self.team0.add_member(hero, self.players)
 
-
                 elif hero.team == 1:
                     if hero.playerId not in self.team1.memberList:
                         self.team1.add_member(hero, self.players)
 
 
         # Populate unitsInGame
-        unit = getUnitsInGame(event)
+        unit = GameUnit(event)
         if unit: #There is a bug in the replay where random units are created at game loop 4294996406
             self.unitsInGame[unit.unitTag] = unit
 
@@ -186,38 +176,50 @@ class Replay():
         if event['_event'] != 'NNet.Replay.Tracker.SUnitDiedEvent':
             return None
 
-        #getHeroDeathsFromReplayEvt(event, self.heroList)
-        getUnitDestruction(event, self.unitsInGame)
+        get_hero_death_from_tracker_events(event, self.heroList)
+        get_unit_destruction(event, self.unitsInGame)
 
 
     def NNet_Replay_Tracker_SUnitOwnerChangeEvent(self, event):
         if event['_event'] != 'NNet.Replay.Tracker.SUnitOwnerChangeEvent':
             return None
 
-        getUnitOwners(event, self.unitsInGame)
+        get_unit_owners(event, self.unitsInGame)
 
 
     def NNet_Game_SCameraUpdateEvent(self, event):
         # Populate Hero Death events based game Events
         if event['_event'] != 'NNet.Game.SCameraUpdateEvent':
             return None
-        getHeroDeathsFromGameEvt(event, self.heroList)
+        get_hero_deaths_from_game_event(event, self.heroList)
 
     def NNet_Game_SCmdUpdateTargetUnitEvent(self, event):
         if event['_event'] != 'NNet.Game.SCmdUpdateTargetUnitEvent':
             return None
 
-        getUnitClicked(event, self.unitsInGame)
+        get_unit_clicked(event, self.unitsInGame)
 
 
     def NNet_Game_SCmdEvent(self, event):
         if event['_event'] != 'NNet.Game.SCmdEvent':
             return None
 
-        ability = getAbilities(event)
+        ability = None
+
+        if event['m_abil']: # If this is an actual user available ability
+            if event['m_data'].get('TargetPoint'):
+                ability = TargetPointAbility(event)
+
+            elif event['m_data'].get('TargetUnit'):
+                ability = TargetUnitAbility(event)
+
+            else: # e['m_data'].get('None'):
+                ability = BaseAbility(event)
+
+
         if ability:
             # update hero stat
-            playerId = findPlayerKeyFromUserId(self.players, ability.userId)
+            playerId = find_player_key_from_user_id(self.players, ability.userId)
             self.heroList[playerId].castedAbilities[ability.castedAtGameLoops] = ability
 
 
