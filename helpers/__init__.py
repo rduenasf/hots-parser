@@ -32,22 +32,10 @@ def getHeroes(e, players):
     Also creates/updates the team of the hero.
     """
 
-    # if a new hero unit is born
-    if e['_event'] == 'NNet.Replay.Tracker.SUnitBornEvent' and e['m_unitTypeName'].startswith('Hero'):
-        playerId = e['m_upkeepPlayerId'] - 1
-
-        hero = HeroUnit()
-        hero.playerId = playerId
-        hero.name = players[playerId].hero
-        hero.team = players[playerId].team
-        hero.userId = e['m_upkeepPlayerId'] - 1
-        hero.internalName = e['m_unitTypeName'][4:]
-        hero.unitTagIndex = e['m_unitTagIndex']
-        hero.unitTagRecycle = e['m_unitTagRecycle']
-        hero.unitTag = hero.unit_tag()
 
 
-        return hero
+
+    return 0
 
 
 def getUnitOwners(e, unitsInGame):

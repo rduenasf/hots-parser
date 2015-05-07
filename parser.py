@@ -1,5 +1,5 @@
 __author__ = 'Rodrigo Duenas, Cristian Orellana'
-# from __future__ import print_function
+
 
 from s2protocol import protocol34835
 from s2protocol.mpyq import mpyq
@@ -91,8 +91,8 @@ def processEvents(protocol=None, replayFile=None):
     ])
 
     statement = "INSERT INTO army_str (uuid, armyData) VALUES ('%s', '%s')" % (replayUuid, armyData)
-    cursor.execute(statement)
-    db.conn.commit ()
+    #cursor.execute(statement)
+    #db.conn.commit ()
 
 
     #f.close()

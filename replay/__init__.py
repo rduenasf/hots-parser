@@ -157,25 +157,19 @@ class Replay():
             return None
 
         # Populate Heroes
-        hero = getHeroes(event, self.players)
-        if hero:
-            self.heroList[hero.playerId] = hero
-            # create/update team
-            if hero.team == 0:
-                if hero.playerId not in self.team0.memberList:
-                    self.team0.memberList.append(hero.playerId)
-                    if self.team0.isWinner is None:
-                        self.team0.id = self.players[hero.playerId].team
-                        self.team0.isWinner = self.players[hero.playerId].is_winner()
-                        self.team0.isLoser = self.players[hero.playerId].is_loser()
+        if event['m_unitTypeName'].startswith('Hero'):
+            hero = HeroUnit(event, self.players)
+            if hero:
+                self.heroList[hero.playerId] = hero
+                # create/update team
+                if hero.team == 0:
+                    if hero.playerId not in self.team0.memberList:
+                        self.team0.add_member(hero, self.players)
 
-            elif hero.team == 1:
-                if hero.playerId not in self.team1.memberList:
-                    self.team1.memberList.append(hero.playerId)
-                    if self.team1.isWinner is None:
-                        self.team1.id = self.players[hero.playerId].team
-                        self.team1.isWinner = self.players[hero.playerId].is_winner()
-                        self.team1.isLoser = self.players[hero.playerId].is_loser()
+
+                elif hero.team == 1:
+                    if hero.playerId not in self.team1.memberList:
+                        self.team1.add_member(hero, self.players)
 
 
         # Populate unitsInGame

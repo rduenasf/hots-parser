@@ -10,6 +10,13 @@ class Team():
         self.isWinner = None
         self.isLoser = None
 
+    def add_member(self, hero, players):
+        if hero.playerId:
+            self.memberList.append(hero.playerId)
+            if self.isWinner is None:
+                self.id = players[hero.playerId].team
+                self.isWinner = players[hero.playerId].is_winner()
+                self.isLoser = players[hero.playerId].is_loser()
 
     def get_total_members(self):
         return len(self.memberList)
@@ -40,19 +47,32 @@ class Unit():
 
 class HeroUnit(Unit):
 
-    def __init__(self):
+    def __init__(self, e, players):
         # General data
-        self.name = ''
-        self.internalName = ''
+        #self.name = ''
+        #self.internalName = ''
         self.isHuman = False
-        self.playerId = None
-        self.userId = None
-        self.team = None
-        self.unitTag = None
-        self.unitTagRecycle = None
-        self.unitTagIndex = None
+        #self.playerId = None
+        #self.userId = None
+        #self.team = None
+        #self.unitTag = None
+        #self.unitTagRecycle = None
+        #self.unitTagIndex = None
         self.pickedTalents = OrderedDict() # Key = Gameloop, data = talent name
-        self._lastTalentTierLen = 0
+        #self._lastTalentTierLen = 0
+
+            # if a new hero unit is born
+        if e['_event'] == 'NNet.Replay.Tracker.SUnitBornEvent' and e['m_unitTypeName'].startswith('Hero'):
+            playerId = e['m_upkeepPlayerId'] - 1
+
+            self.playerId = playerId
+            self.name = players[playerId].hero
+            self.team = players[playerId].team
+            self.userId = e['m_upkeepPlayerId'] - 1
+            self.internalName = e['m_unitTypeName'][4:]
+            self.unitTagIndex = e['m_unitTagIndex']
+            self.unitTagRecycle = e['m_unitTagRecycle']
+            self.unitTag = self.unit_tag()
 
 
         # Metrics
