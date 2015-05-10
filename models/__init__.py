@@ -1,8 +1,8 @@
 __author__ = 'Rodrigo Duenas, Cristian Orellana'
 
 from collections import OrderedDict
-import datetime
 from helpers import *
+
 
 class Team():
     def __init__(self):
@@ -13,7 +13,8 @@ class Team():
         self.isLoser = None
 
     def add_member(self, hero, players):
-        if hero.playerId:
+        #print "adding %s to %s" % (hero.playerId, players[hero.playerId].team)
+        if hero.playerId is not None:
             self.memberList.append(hero.playerId)
             if self.isWinner is None:
                 self.id = players[hero.playerId].team
@@ -112,15 +113,14 @@ class HeroReplay():
         self.map = ''
         self.startTime = None # UTC
         self.gameLoops = None # duration of the game in gameloops
-        self.speed = None
+        self.speed = 0
         self.gameType = None
-
+        self.gameVersion = None
+        self.randomVal = None
         self.map = details['m_title']
         self.startTime = win_timestamp_to_date(details['m_timeUTC'])
 
-
-
-    def durations_in_secs(self):
+    def duration_in_secs(self):
         if self.gameLoops:
             return self.gameLoops / 16
         else:
@@ -129,7 +129,7 @@ class HeroReplay():
     def __str__(self):
         return "Title: %s\nStarted at: %s\nDuration (min/gl): %d/%d\nSpeed: %s\nGame Type: %s" % (self.map,
         self.startTime,
-        self.durations_in_secs()/60,
+        self.duration_in_secs()/60,
         self.gameLoops,
         self.speed,
         self.gameType
@@ -150,6 +150,9 @@ class Player():
         self.isHuman = (player['m_toon']['m_region'] != 0)
         self.gameResult = int(player['m_result'])
         self.toonHandle = self.get_toon_handle(player)
+        self.realm = player['m_toon']['m_realm']
+        self.region = player['m_toon']['m_region']
+        self.rank = None
 
 
 

@@ -1,8 +1,8 @@
 __author__ = 'Rodrigo Duenas, Cristian Orellana'
-from helpers import *
+
 from data import *
 from models import *
-
+from hashlib import sha256
 
 class Replay():
 
@@ -29,6 +29,16 @@ class Replay():
       self.protocol = protocol
       self.replayFile = replayFile
 
+    def get_replay_id(self):
+        _id = list()
+        for h in self.team0.memberList:
+            _id.append(self.players[h].toonHandle)
+        for h in self.team1.memberList:
+            _id.append(self.players[h].toonHandle)
+        _id = '_'.join(_id)
+        id = "%s_%s" % (self.replayInfo.randomVal,_id)
+        return sha256(id).hexdigest()
+
     def process_replay_details(self):
         contents = self.replayFile.read_file('replay.details')
         details = self.protocol.decode_replay_details(contents)
@@ -45,11 +55,18 @@ class Replay():
                 p.userId = -1
             self.players[player['m_workingSetSlotId']] = p
 
+    def process_replay_initdata(self):
+        contents = self.replayFile.read_file('replay.initData')
+        initdata = self.protocol.decode_replay_initdata(contents)
+        self.replayInfo.randomVal = initdata['m_syncLobbyState']['m_gameDescription']['m_randomValue']
+        self.replayInfo.speed = initdata['m_syncLobbyState']['m_gameDescription']['m_gameSpeed']
+
 
     def process_replay_header(self):
         contents = self.replayFile.header['user_data_header']['content']
         header = self.protocol.decode_replay_header(contents)
         self.replayInfo.gameLoops = header['m_elapsedGameLoops']
+        self.replayInfo.gameVersion = header['m_dataBuildNum']
 
     def process_replay_attributes(self):
         contents = self.replayFile.read_file('replay.attributes.events')
@@ -99,21 +116,21 @@ class Replay():
     def calculate_game_strength(self):
       #print "TOTAL DURATION %s" % self.replayInfo.durations_in_secs()
       self.army_strength = [
-        [[t, 0] for t in xrange(1, self.replayInfo.durations_in_secs() + 1)],
-        [[t, 0] for t in xrange(1, self.replayInfo.durations_in_secs() + 1)]
+        [[t, 0] for t in xrange(1, self.replayInfo.duration_in_secs() + 1)],
+        [[t, 0] for t in xrange(1, self.replayInfo.duration_in_secs() + 1)]
       ]
 
 
       self.merc_strength = [
-        [[t, 0] for t in xrange(1, self.replayInfo.durations_in_secs() + 1)],
-        [[t, 0] for t in xrange(1, self.replayInfo.durations_in_secs() + 1)]
+        [[t, 0] for t in xrange(1, self.replayInfo.duration_in_secs() + 1)],
+        [[t, 0] for t in xrange(1, self.replayInfo.duration_in_secs() + 1)]
       ]
 
       for unit in self.units_in_game():
         if unit.team not in [0,1] and (not unit.is_army_unit() or not unit.is_hired_mercenary() or not unit.is_advanced_unit()):
           continue
 
-        end = unit.get_death_time(self.replayInfo.durations_in_secs())
+        end = unit.get_death_time(self.replayInfo.duration_in_secs())
         # if end > self.replayInfo.durations_in_secs():
         #     continue
             # end = self.replayInfo.durations_in_secs()
@@ -164,7 +181,7 @@ class Replay():
 
         # Populate unitsInGame
         unit = GameUnit(event)
-        if unit: #There is a bug in the replay where random units are created at game loop 4294996406
+        if unit:
             self.unitsInGame[unit.unitTag] = unit
 
 
