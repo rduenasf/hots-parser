@@ -38,10 +38,10 @@ if __name__ == "__main__":
         for directory, dirnames, filenames in walk('/Users/cristiano/Others/log-crawler/download/'):
             for file in filenames:
                 if file.endswith('StormReplay'):
-                    file_path = path.join(directory, file)
-                    replay = mpyq.MPQArchive(file_path)
-                    print file_path
                     try:
+                        file_path = path.join(directory, file)
+                        print file_path
+                        replay = mpyq.MPQArchive(file_path)
                         replayData = processEvents(protocol34835, replay, conf)
                         save_to_db(replayData, file_path)
                     except Exception, e:

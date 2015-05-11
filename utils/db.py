@@ -29,18 +29,24 @@ class DB():
 
     def check_match(self, id):
         verification = "SELECT replay_file FROM matches WHERE match_hash = '%s'" % id
-        self.cursor.execute(verification)
-        rows = self.cursor.fetchone()
-        if rows is not None:
-            return rows[0]
-        else:
-            return None
+        try:
+            self.cursor.execute(verification)
+            rows = self.cursor.fetchone()
+            if rows is not None:
+                return rows[0]
+            else:
+                return None
+        except Exception, e:
+            print "Error while trying to check match: %s" %e
 
     def check_player(self, account, uuid):
         verification = "SELECT COUNT(*) FROM player WHERE toon_handle = %s and match_hash = %s"
-        self.cursor.execute(verification,(account, uuid))
-        rows = self.cursor.fetchone()
-        return rows[0] > 0
+        try:
+            self.cursor.execute(verification,(account, uuid))
+            rows = self.cursor.fetchone()
+            return rows[0] > 0
+        except Exception, e:
+            print "Error while trying to check player: %s" % e
 
     def check_team(self, members):
         verification = "SELECT COUNT(*) FROM team WHERE "
@@ -53,9 +59,12 @@ class DB():
             else:
                 verification += " AND member_%s = '%s'" % (pos, m)
             pos +=1
-        self.cursor.execute(verification)
-        rows = self.cursor.fetchone()
-        return rows[0] > 0
+        try:
+            self.cursor.execute(verification)
+            rows = self.cursor.fetchone()
+            return rows[0] > 0
+        except Exception, e:
+            print "Error while trying to check team: %s" % e
 
     def insert_hero(self, name):
         insert = "INSERT INTO hero (hero_name) VALUES ('%s')" % name
@@ -67,9 +76,12 @@ class DB():
 
 
     def get_hero_id_from_name(self, name):
-        query = "SELECT hero_id FROM hero WHERE hero_name = '%s'" % name
-        self.cursor.execute(query)
-        row = self.cursor.fetchone()
+        query = "SELECT hero_id FROM hero WHERE hero_name = '%s' " % name.replace("'","")
+        try:
+            self.cursor.execute(query)
+            row = self.cursor.fetchone()
+        except Exception, e:
+            print "Error while getting hero: %s" % e
         if not row:
             return self.insert_hero(name)
         else:
@@ -77,9 +89,12 @@ class DB():
 
     def check_hero_stats(self, account, match):
         verification = "SELECT COUNT(*) FROM hero_match_stats WHERE match_hash = %s AND toon_handle = %s"
-        self.cursor.execute(verification, (match, account))
-        rows = self.cursor.fetchone()
-        return rows[0] > 0
+        try:
+            self.cursor.execute(verification, (match, account))
+            rows = self.cursor.fetchone()
+            return rows[0] > 0
+        except Exception, e:
+            print "Error while trying to check hero stats: %s" % e
 
 
     def save_match_info(self, r=None, path=None):
@@ -102,7 +117,7 @@ class DB():
                             r.replayInfo.gameType,
                             r.replayInfo.map.replace("'",""),
                             r.replayInfo.gameVersion,
-                            file_path,
+                            path,
                             json.dumps([{ "key": "Team 1", "values": r.army_strength[0] }, { "key": "Team 2", "values": r.army_strength[1] }])
                             )
 
@@ -151,7 +166,10 @@ class DB():
         insert_query = insert_query % str(insert_players)
         insert_query = insert_query.replace('"','').replace('[','').replace(']','')
         if len(insert_players) > 0:
-            self.cursor.execute(insert_query)
+            try:
+                self.cursor.execute(insert_query)
+            except Exception, e:
+                print "Error while trying to save player: %s" % e
 
 
     def save_teams(self, r=None):
@@ -207,7 +225,7 @@ class DB():
             toon_handle = r.players[r.heroList[hero].playerId].toonHandle
             already_exists = self.check_hero_stats(toon_handle, match_hash)
             if not already_exists:
-                hero_id = self.get_hero_id_from_name(r.heroList[hero].name)
+                hero_id = self.get_hero_id_from_name(r.heroList[hero].internalName)
                 deaths = r.heroList[hero].deathCount
                 kills = r.heroList[hero].killCount
                 out_damage = r.heroList[hero].totalOutDamage
@@ -239,4 +257,7 @@ class DB():
         insert_query = insert_query % str(insert_hero)
         insert_query = insert_query.replace('"','').replace('[','').replace(']','')
         if len(insert_hero) > 0:
-            self.cursor.execute(insert_query)
+            try:
+                self.cursor.execute(insert_query)
+            except Exception, e:
+                print "Error while trying to save hero match stats: %s" % e
