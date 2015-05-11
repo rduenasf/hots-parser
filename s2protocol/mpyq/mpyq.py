@@ -131,6 +131,8 @@ class MPQArchive(object):
         magic = self.file.read(4)
         self.file.seek(0)
 
+        header = None
+
         if magic == 'MPQ\x1a':
             header = read_mpq_header()
             header['offset'] = 0
