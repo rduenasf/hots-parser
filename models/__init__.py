@@ -2,6 +2,7 @@ __author__ = 'Rodrigo Duenas, Cristian Orellana'
 
 from collections import OrderedDict
 from helpers import *
+from data import *
 
 
 class Team():
@@ -11,6 +12,33 @@ class Team():
         self.memberList = list()
         self.isWinner = None
         self.isLoser = None
+        self.wastedSoulGems = 0 # Totan number of gems no one took in Tomb of the Spider Queen map
+        self.pickedSoulGems = 0
+        self.summonedSpiderBosses = 0
+        self.spiderBossesNorthTotalAliveTime = 0
+        self.spiderBossesCenterTotalAliveTime = 0
+        self.spiderBossesSouthTotalAliveTime = 0
+        self.spiderBossesTotalAliveTime = 0
+        self.totalBuildingsKilledDuringSpiders = 0
+        self.totalUnitsKilledDuringSpiders = 0
+        self.missedRegenGlobes = 0  # regen globes no one took
+        self.summonedPlantBosses = 0
+        self.plantBossesTotalAliveTime = 0
+        self.luxoriaTemplesCaptured = 0
+        self.luxoriaTemplesCapturedSeconds = 0
+        self.luxoriaTempleNorthCapturedSeconds = 0
+        self.luxoriaTempleNorthCaptured = 0
+        self.luxoriaTempleCenterCapturedSeconds = 0
+        self.luxoriaTempleCenterCaptured = 0
+        self.luxoriaTempleSouthCapturedSeconds = 0
+        self.luxoriaTempleSouthCaptured = 0
+        self.luxoriaTemplesPct = 0
+        self.luxoriaTempleNorthPct = 0
+        self.luxoriaTempleCenterPct = 0
+        self.luxoriaTempleSouthPct = 0
+        self.watchTowersTaken = 0
+        self.bossTaken = 0
+        self.mercsTaken = 0
 
     def add_member(self, hero, players):
         #print "adding %s to %s" % (hero.playerId, players[hero.playerId].team)
@@ -92,8 +120,11 @@ class HeroUnit(Unit):
         self.totalIncHeal = 0 # How much heal this hero received
         self.maxKillSpree = 0 # maximum number of heroes killed after (if ever) die
         self.capturedTributes = 0 # Number of tributes captured by this hero in the Curse map
+        self.clickedTributes = 0 # How many times the hero clicked a tribute in the Curse map
+        self.totalSoulsTaken = 0 # How many times the hero collected soul shards on the tombe of the spider queen map
         self.capturedMercCamps = 0
         self.capturedBeaconTowers = 0
+        self.regenGlobesTaken = 0
         self.castedAbilities = OrderedDict() # key = gameloops when the ability was casted, value = ability instance
 
 
@@ -110,14 +141,14 @@ class HeroUnit(Unit):
 class HeroReplay():
     def __init__(self, details):
         # General Data
-        self.map = ''
         self.startTime = None # UTC
         self.gameLoops = None # duration of the game in gameloops
         self.speed = 0
         self.gameType = None
         self.gameVersion = None
         self.randomVal = None
-        self.map = details['m_title']
+        self.mapName = details['m_title']
+        self.internalMapName = None
         self.startTime = win_timestamp_to_date(details['m_timeUTC'])
 
     def duration_in_secs(self):
@@ -127,7 +158,7 @@ class HeroReplay():
             return 0
 
     def __str__(self):
-        return "Title: %s\nStarted at: %s\nDuration (min/gl): %d/%d\nSpeed: %s\nGame Type: %s" % (self.map,
+        return "Title: %s\nStarted at: %s\nDuration (min/gl): %d/%d\nSpeed: %s\nGame Type: %s" % (self.internalMapName,
         self.startTime,
         self.duration_in_secs()/60,
         self.gameLoops,
@@ -178,45 +209,13 @@ class Player():
 
 class GameUnit(Unit):
 
-    _TRIBUTEUNIT = ['RavenLordTribute']
 
-    _BEACONUNIT = ['TownMercCampCaptureBeacon', 'DragonballCaptureBeacon', 'WatchTowerCaptureBeacon']
-
-
-    _PICKUNITS = {
-            #'ItemSeedPickup': 150,
-            'ItemSoulPickup': 128,
-            'ItemSoulPickupFive': 128,
-            'ItemSoulPickupTwenty': 128,
-            'ItemUnderworldPowerup': 150,
-            'RegenGlobe': 128
-    }
-
-    _MERCUNITSNPC = [
-        # Garden Merc units
-            'MercDefenderSiegeGiant', 'MercDefenderMeleeOgre', 'MercDefenderRangedOgre', 'JungleGraveGolemDefender']
-
-    _MERCUNITSTEAM = {
-        'MercLanerMeleeOgre': 1,
-        'MercLanerSiegeGiant': 2.5,
-        'MercLanerRangedOgre': 1,
-        'JungleGraveGolemLaner': 10,
-        # TODO move to own list as map event
-        'SoulEaterMinion': 1.75,
-        'SoulEater': 3
-    }
-
-    _ADVANCEDUNIT = {'CatapultMinion': 2}
-
-
-    _NORMALUNIT = {'FootmanMinion': 0.25,
-                   'WizardMinion': 0.25,
-                   'RangedMinion': 0.25
-                }
     def __init__(self, e):
         # General Data
 
         self.diedAt = -1 # Seconds into the game when it was destroyed (-1 means never died)
+        self.diedAtX = None
+        self.diedAtY = None
         self.diedAtGameLoops = None
         self.gameLoopsAlive = -1 # -1 means never died.
         self.killerTeam = None
@@ -224,14 +223,15 @@ class GameUnit(Unit):
         self.killerTagIndex = None
         self.killerTagRecycle = None
         self.killerPlayerId = None
-        self.ownerList = [] # contains a list of tuples (a, b) where a = owner team and b = gameloop of ownership event
-        self.clickerList = [] # contains a list of tuples (a, b) where a = clicker and b = GameLoop of the click event
+        self.ownerList = list() # contains a list of tuples (a, b) where a = owner team and b = gameloop of ownership event
+        self.clickerList = OrderedDict() # key = gameloop , value = player id
         self.heroData = None
-
+        self.unitsKilled = 0
+        self.buildingsKilled = 0
         self.unitTagIndex = e['m_unitTagIndex']
         self.unitTagRecycle = e['m_unitTagRecycle']
         self.unitTag = self.unit_tag()
-        self.bornAt = get_seconds_from_gameloop(e) # Seconds into the game when it was created
+        self.bornAt = get_seconds_from_event_gameloop(e) # Seconds into the game when it was created
         self.bornAtGameLoops = get_gameloops(e)
         self.internalName = e['m_unitTypeName'] # Internal unit name
         self.team = e['m_upkeepPlayerId'] - 11 # The team this unit belongs to
@@ -241,50 +241,61 @@ class GameUnit(Unit):
 
 
     def is_map_resource(self):
-      return self.internalName in GameUnit._PICKUNITS
+      return self.internalName in PICKUNITS
 
     def was_picked(self):
-      if self.internalName in GameUnit._PICKUNITS:
-        return self.gameLoopsAlive < GameUnit._PICKUNITS[self.internalName]
+      if self.internalName in PICKUNITS:
+        return self.gameLoopsAlive < PICKUNITS[self.internalName]
       else:
         return False
 
+    def is_building(self):
+        return self.internalName in BUILDINGS
+
+    def is_regen_globe(self):
+        return self.internalName in REGEN_GLOBES_PICKABLE
+
+    def is_spider_summon(self):
+        return self.internalName == 'SoulEater'
+
     def is_mercenary(self):
-        return self.internalName in GameUnit._MERCUNITSNPC or self.internalName in GameUnit._MERCUNITSTEAM
+        return self.internalName in MERCUNITSNPC or self.internalName in MERCUNITSTEAM
 
     def is_hired_mercenary(self):
-        return self.internalName in GameUnit._MERCUNITSTEAM
+        return self.internalName in MERCUNITSTEAM
 
     def is_army_unit(self):
-        return self.internalName in GameUnit._NORMALUNIT and self.internalName not in GameUnit._PICKUNITS
+        return self.internalName in NORMALUNIT and self.internalName not in PICKUNITS
+
+    def is_pickable_unit(self):
+        return self.internalName in PICKUNITS
+
+    def is_tomb_of_the_spider_pickable(self):
+        return self.internalName in TOMB_OF_THE_SPIDER_PICKABLE
+
+    def is_sky_temple_tower(self):
+        return self.internalName in SKY_TEMPLE_TOWER
 
     def is_beacon(self):
-        return self.internalName in GameUnit._BEACONUNIT
+        return self.internalName in BEACONUNIT
 
     def is_tribute(self):
-        return self.internalName in GameUnit._TRIBUTEUNIT
-
-    def get_tribute_controller(self):
-        """
-        Gets the team that controlled the tribute. None if the unit is not a tribute
-        """
-        if not self.is_tribute() or len(self.clickerList) == 0:
-            return None
-        return self.clickerList[len(self.clickerList) - 1][0]
+        return self.internalName in TRIBUTEUNIT
 
     def is_advanced_unit(self):
-        return self.internalName in GameUnit._ADVANCEDUNIT
+        return self.internalName in ADVANCEDUNIT
 
     def get_death_time(self, total_time):
         return self.diedAt if (self.diedAt > 0) else total_time
 
+
     def get_strength(self):
         if self.is_hired_mercenary():
-            return GameUnit._MERCUNITSTEAM[self.internalName]
+            return MERCUNITSTEAM[self.internalName]
         elif self.is_advanced_unit():
-            return GameUnit._ADVANCEDUNIT[self.internalName]
+            return ADVANCEDUNIT[self.internalName]
         elif self.is_army_unit():
-            return GameUnit._NORMALUNIT[self.internalName]
+            return NORMALUNIT[self.internalName]
         else:
             return 0
 
@@ -307,7 +318,7 @@ class BaseAbility():
         self.abilityName = None
         self.abilityTag = get_ability_tag(event)
         self.castedAtGameLoops = event['_gameloop']
-        self.castedAt = get_seconds_from_gameloop(event)
+        self.castedAt = get_seconds_from_event_gameloop(event)
         self.userId = event['_userid']['m_userId']
 
     def __str__(self):
@@ -319,26 +330,44 @@ class TargetPointAbility(BaseAbility):
     def __init__(self, event):
 
         self.abilityTag = get_ability_tag(event)
-        self.castedAt = get_seconds_from_gameloop(event)
+        self.castedAt = get_seconds_from_event_gameloop(event)
         self.userId = event['_userid']['m_userId']
         self.castedAtGameLoops = event['_gameloop']
-        self.x = event['m_data']['TargetPoint']['x']/4096.0
-        self.y = event['m_data']['TargetPoint']['y']/4096.0
-        self.z = event['m_data']['TargetPoint']['z']/4096.0
+        if event.get('m_data'):
+            self.x = event['m_data']['TargetPoint']['x']/4096.0
+            self.y = event['m_data']['TargetPoint']['y']/4096.0
+            self.z = event['m_data']['TargetPoint']['z']/4096.0
+        elif event.get('m_target'):
+            self.x = event['m_target']['x']/4096.0
+            self.y = event['m_target']['y']/4096.0
+            self.z = event['m_target']['z']/4096.0
+
+    def __str__(self):
+        return "Skill: %s\tCoords: (%s,%s,%s)" % (self.abilityTag, self.x, self.y, self.z)
 
 
 class TargetUnitAbility(BaseAbility):
 
     def __init__(self, event):
         self.abilityTag = get_ability_tag(event)
-        self.castedAt = get_seconds_from_gameloop(event)
+        self.castedAt = get_seconds_from_event_gameloop(event)
         self.userId = event['_userid']['m_userId']
         self.castedAtGameLoops = event['_gameloop']
-        self.x = event['m_data']['TargetUnit']['m_snapshotPoint']['x']/4096.0
-        self.y = event['m_data']['TargetUnit']['m_snapshotPoint']['y']/4096.0
-        self.z = event['m_data']['TargetUnit']['m_snapshotPoint']['z']/4096.0
-        self.targetPlayerId = event['m_data']['TargetUnit']['m_snapshotControlPlayerId']
-        self.targetTeamId = event['m_data']['TargetUnit']['m_snapshotUpkeepPlayerId']
-        self.targetUnitTag = event['m_data']['TargetUnit']['m_tag']
+        if event.get('m_data'):
+            self.x = event['m_data']['TargetUnit']['m_snapshotPoint']['x']/4096.0
+            self.y = event['m_data']['TargetUnit']['m_snapshotPoint']['y']/4096.0
+            self.z = event['m_data']['TargetUnit']['m_snapshotPoint']['z']/4096.0
+            self.targetPlayerId = event['m_data']['TargetUnit']['m_snapshotControlPlayerId']
+            self.targetTeamId = event['m_data']['TargetUnit']['m_snapshotUpkeepPlayerId']
+            self.targetUnitTag = event['m_data']['TargetUnit']['m_tag']
+        elif event.get('m_target'):
+            self.x = event['m_target']['m_snapshotPoint']['x']/4096.0
+            self.y = event['m_target']['m_snapshotPoint']['y']/4096.0
+            self.z = event['m_target']['m_snapshotPoint']['z']/4096.0
+            self.targetPlayerId = event['m_target']['m_snapshotControlPlayerId']
+            self.targetTeamId = event['m_target']['m_snapshotUpkeepPlayerId']
+            self.targetUnitTag = event['m_target']['m_tag']
 
+    def __str__(self):
+        return "Skill: %s\tCoords: (%s,%s,%s)\tTarget: %s" % (self.abilityTag, self.x, self.y, self.z, self.targetUnitTag)
 

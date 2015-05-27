@@ -1,4 +1,99 @@
+UNIQUEMAPUNITS = {'RavenLordTribute': 'Cursed Hollow',
+                   'DragonballCaptureBeacon': 'Dragon Shire',
+                   'SoulCage': 'Tomb of the Spider Queen',
+                   'ItemUnderworldPowerup': 'Haunted Mines',
+                   'LuxoriaTemple': 'Sky Temple',
+                   'ItemSeedPickup': 'Garden of Terror',
+                   'HangingSharkBreakable_L': 'Blackheart\'s Bay'
+                   }
 
+TRIBUTEUNIT = ['RavenLordTribute']
+
+BUILDINGS = [
+            'TownCannonTowerDead',
+            'TownCannonTowerL2',
+            'TownCannonTowerL2Standalone',
+            'TownCannonTowerL3',
+            'TownCannonTowerL3Standalone',
+            'TownGateL215BLUR',
+            'TownGateL215BRUL',
+            'TownGateL2BLUR',
+            'TownGateL315BLUR',
+            'TownGateL315BRUL',
+            'TownGateL3BRUL',
+            'TownMoonwellL2',
+            'TownMoonwellL3',
+            'TownTownHallL2',
+            'TownTownHallL3',
+            'TownWallRadial14L3',
+            'TownWallRadial15L3',
+            'TownWallRadial16L2',
+            'TownWallRadial17L2',
+            'TownWallRadial17L3',
+            'TownWallRadial18L2',
+            'TownWallRadial18L3',
+            'TownWallRadial19L2',
+            'TownWallRadial19L3',
+            'TownWallRadial20L3',
+            'TownWallRadial21L3',
+            'TownWallRadial2L3',
+            'TownWallRadial3L3',
+            'TownWallRadial4L2',
+            'TownWallRadial4L3',
+            'TownWallRadial5L2',
+            'TownWallRadial5L3',
+            'TownWallRadial6L2',
+            'TownWallRadial6L3',
+            'TownWallRadial7L2',
+            'TownWallRadial7L3',
+            'TownWallRadial8L3',
+            'TownWallRadial9L3',
+            ]
+
+SKY_TEMPLE_TOWER = ['LuxoriaTemple']
+
+SKY_TEMPLE_POSITIONS = {42: 'North', 127: 'Center', 184: 'South'}
+SOUL_EATER_POSITIONS = {122: 'North', 114: 'Center', 109: 'South'}
+
+BEACONUNIT = ['TownMercCampCaptureBeacon', 'DragonballCaptureBeacon', 'WatchTowerCaptureBeacon', 'LuxoriaTemple']
+
+TOMB_OF_THE_SPIDER_PICKABLE = {'ItemSoulPickup': 1, 'ItemSoulPickupFive': 5, 'ItemSoulPickupTwenty': 20}
+
+REGEN_GLOBES_PICKABLE = ['RegenGlobe', 'RegenGlobeNeutral']
+
+PICKUNITS = {
+        #'ItemSeedPickup': 150,
+        'ItemSoulPickup': 128,
+        'ItemSoulPickupFive': 128,
+        'ItemSoulPickupTwenty': 128,
+        'ItemUnderworldPowerup': 150,
+        'RegenGlobe': 128,
+        'RegenGlobeNeutral': 128
+}
+
+MERCUNITSNPC = [
+    # Garden Merc units
+        'MercDefenderSiegeGiant', 'MercDefenderMeleeOgre', 'MercDefenderRangedOgre', 'JungleGraveGolemDefender']
+
+
+
+MERCUNITSTEAM = {
+    'MercLanerMeleeOgre': 1,
+    'MercLanerSiegeGiant': 2.5,
+    'MercLanerRangedOgre': 1,
+    'JungleGraveGolemLaner': 10,
+    # TODO move to own list as map event
+    'SoulEaterMinion': 1.75,
+    'SoulEater': 3
+}
+
+ADVANCEDUNIT = {'CatapultMinion': 2}
+
+
+NORMALUNIT = {'FootmanMinion': 0.25,
+               'WizardMinion': 0.25,
+               'RangedMinion': 0.25
+}
 
 num_choices_to_level = {0: None, 1: 1, 2: 4, 3: 7, 4: 10, 5: 13, 6: 16, 7: 20}
 

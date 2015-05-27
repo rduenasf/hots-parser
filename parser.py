@@ -22,8 +22,10 @@ def processEvents(protocol=None, replayFile=None, conf=None):
     eh.process_replay_attributes()
     eh.calculate_game_strength()
     eh.setTeamsLevel()
+    eh.process_map_events()
+    eh.process_generic_events()
 
-    return eh
+
 
         # if hero.get_total_casted_abilities() > 0:
         #     print "\t\tCasted Abilities:"
@@ -31,7 +33,7 @@ def processEvents(protocol=None, replayFile=None, conf=None):
         #         print "\t\t\t GL: %d, AbilId: %d" % (gameLoop, hero.castedAbilities[gameLoop].abilityTag)
 
     # for hero in eh.heroes_in_game():
-    #     print "Hero: %s" % hero.name
+    #     print "Hero: %s (%s)" % (hero.name, hero.internalName)
     #     for gl in hero.pickedTalents.keys():
     #         print "\t%s" % hero.pickedTalents[gl]
 
@@ -39,6 +41,8 @@ def processEvents(protocol=None, replayFile=None, conf=None):
     #
     # for unit in eh.get_clicked_units():
     #     print unit
+
+    return eh
     print "\n === Map Info ==="
 
     print eh.replayInfo
