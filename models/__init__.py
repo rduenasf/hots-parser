@@ -21,6 +21,12 @@ class Team():
         self.spiderBossesTotalAliveTime = 0
         self.totalBuildingsKilledDuringSpiders = 0
         self.totalUnitsKilledDuringSpiders = 0
+        self.totalBuildingsKilledDuringNorthSpider = 0
+        self.totalUnitsKilledDuringNorthSpider = 0
+        self.totalBuildingsKilledDuringCenterSpider = 0
+        self.totalUnitsKilledDuringCenterSpider = 0
+        self.totalBuildingsKilledDuringSouthSpider = 0
+        self.totalUnitsKilledDuringSouthSpider = 0
         self.missedRegenGlobes = 0  # regen globes no one took
         self.summonedPlantBosses = 0
         self.plantBossesTotalAliveTime = 0
@@ -39,6 +45,35 @@ class Team():
         self.watchTowersTaken = 0
         self.bossTaken = 0
         self.mercsTaken = 0
+        self.totalPlantsSummoned = {} # plant number, value
+        self.totalPlantsDuration = {} # plant number, value
+        self.totalUnitsKilledByPlants = {} # plant number, value
+        self.totalBuildingsKilledByPlants = {} # plant number, value
+        self.totalBuildingsKilledDuringPlant = {}
+        self.totalUnitsKilledDuringPlant = {}
+        self.totalPlantPotsPlaced = {} # plant number, value
+        self.plantEffectiveness = {} # plant number, value
+        self.totalPlantPotsKilled = 0 # plant number, value
+        self.totaldragonsSummoned = {}
+        self.totaldragonsDuration = {}
+        self.totalUnitsKilledBydragons = {}
+        self.totalBuildingsKilledBydragons = {}
+        self.dragonEffectiveness = {}
+        self.totalBuildingsKilledDuringdragon = {}
+        self.totalUnitsKilledDuringdragon = {}
+        self.wastedDragonTime = {} # How many seconds the dragon was available to be controlled but no one used it.
+        self.totalGolemsSummoned = {}
+        self.totalGolemDistanceTraveled = {}
+        self.golemEffectiveness = {}
+        self.totalUnitsKilledByGolem = {}
+        self.totalBuildingsKilledByGolem = {}
+        self.totalUnitsKilledDuringGolem = {}
+        self.totalBuildingsKilledDuringGolem = {}
+        self.totalGolemDuration = {}
+        self.totalShipsControlled = {} # ship number: time that took to take the ship
+        self.totalUnitsKilledDuringShip = {}
+        self.totalBuildingsDestroyedDuringShip = {}
+        self.shipEffectiveness = {}
 
     def add_member(self, hero, players):
         #print "adding %s to %s" % (hero.playerId, players[hero.playerId].team)
@@ -75,6 +110,9 @@ class Unit():
 
     def unit_tag_recycle(self):
         return (self.unitTag) & 0x0003ffff
+
+    def is_hero(self):
+        return False
 
 class HeroUnit(Unit):
 
@@ -126,6 +164,15 @@ class HeroUnit(Unit):
         self.capturedBeaconTowers = 0
         self.regenGlobesTaken = 0
         self.castedAbilities = OrderedDict() # key = gameloops when the ability was casted, value = ability instance
+        self.totalPlantsControlled = 0
+        self.totalUnitsKilledAsPlant = {} # plant number, value
+        self.totalBuildingsKilledAsPlant = {} # plant number, value
+        self.totalPolymorphedUnits = {} # plant number, value
+        self.totalPlantPotsPlaced = {} # plant number, value
+        self.totalPlantPotsKilled = 0
+        self.totalDragonsControlled = 0
+        self.totalBuildingsKilledAsDragon = {}
+        self.totalUnitsKilledAsDragon = {}
 
 
     def __str__(self):
@@ -136,6 +183,9 @@ class HeroUnit(Unit):
 
     def get_total_picked_talents(self):
         return len(self.pickedTalents)
+
+    def is_hero(self):
+        return True
 
 
 class HeroReplay():
@@ -213,6 +263,7 @@ class GameUnit(Unit):
     def __init__(self, e):
         # General Data
 
+        self.isDead = False
         self.diedAt = -1 # Seconds into the game when it was destroyed (-1 means never died)
         self.diedAtX = None
         self.diedAtY = None
@@ -223,7 +274,7 @@ class GameUnit(Unit):
         self.killerTagIndex = None
         self.killerTagRecycle = None
         self.killerPlayerId = None
-        self.ownerList = list() # contains a list of tuples (a, b) where a = owner team and b = gameloop of ownership event
+        self.ownerList = list() # owner, when, duration (None = forever)
         self.clickerList = OrderedDict() # key = gameloop , value = player id
         self.heroData = None
         self.unitsKilled = 0
@@ -234,10 +285,12 @@ class GameUnit(Unit):
         self.bornAt = get_seconds_from_event_gameloop(e) # Seconds into the game when it was created
         self.bornAtGameLoops = get_gameloops(e)
         self.internalName = e['m_unitTypeName'] # Internal unit name
-        self.team = e['m_upkeepPlayerId'] - 11 # The team this unit belongs to
+        self.team = e['m_upkeepPlayerId'] - 11 if e['m_upkeepPlayerId'] > 10 else e['m_upkeepPlayerId'] - 1 # Team this unit belongs to, or Hero controlling it at born time (if it's <= 10)
         self.bornAtX = e['m_x']
         self.bornAtY = e['m_y']
-
+        self.positions = OrderedDict() # key seconds, val = dict {'x','y'}
+        if not self.is_plant_vehicle():
+            self.positions[self.bornAtGameLoops] = [self.bornAtX, self.bornAtY]
 
 
     def is_map_resource(self):
@@ -258,6 +311,9 @@ class GameUnit(Unit):
     def is_spider_summon(self):
         return self.internalName == 'SoulEater'
 
+    def is_plant_pot(self):
+        return self.internalName == 'PlantHorrorOvergrowthPlant'
+
     def is_mercenary(self):
         return self.internalName in MERCUNITSNPC or self.internalName in MERCUNITSTEAM
 
@@ -273,6 +329,9 @@ class GameUnit(Unit):
     def is_tomb_of_the_spider_pickable(self):
         return self.internalName in TOMB_OF_THE_SPIDER_PICKABLE
 
+    def is_seed_pickable(self):
+        return self.internalName == 'ItemSeedPickup'
+
     def is_sky_temple_tower(self):
         return self.internalName in SKY_TEMPLE_TOWER
 
@@ -286,8 +345,22 @@ class GameUnit(Unit):
         return self.internalName in ADVANCEDUNIT
 
     def get_death_time(self, total_time):
-        return self.diedAt if (self.diedAt > 0) else total_time
+        return self.diedAt if (self.diedAt >= 0) else total_time
 
+    def is_plant_vehicle(self):
+        return self.internalName in PLANT_CONTROLLABLE
+
+    def is_dragon_statue(self):
+        return self.internalName in DRAGON_STATUE
+
+    def is_golem(self):
+        return self.internalName in GOLEM_UNIT
+
+    def is_golem_body(self):
+        return self.internalName in GOLEM_BODY
+
+    def is_ghostship(self):
+        return self.internalName in GHOST_SHIP
 
     def get_strength(self):
         if self.is_hired_mercenary():
@@ -296,6 +369,8 @@ class GameUnit(Unit):
             return ADVANCEDUNIT[self.internalName]
         elif self.is_army_unit():
             return NORMALUNIT[self.internalName]
+        elif self.is_building():
+            return BUILDINGS[self.internalName]
         else:
             return 0
 
@@ -345,6 +420,15 @@ class TargetPointAbility(BaseAbility):
     def __str__(self):
         return "Skill: %s\tCoords: (%s,%s,%s)" % (self.abilityTag, self.x, self.y, self.z)
 
+
+class UnitUpgrade():
+    def __init__(self, event):
+        self.gameloops = event['_gameloop']
+        self.upgradedPlayerId = event['m_playerId'] - 1
+        self.internalName = event['m_upgradeTypeName']
+
+    def is_dragon_upgrade(self):
+        return self.internalName in DRAGON_CONTROLLABLE
 
 class TargetUnitAbility(BaseAbility):
 

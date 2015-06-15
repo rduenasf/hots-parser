@@ -80,7 +80,9 @@ class DB():
 
 
     def get_hero_id_from_name(self, name):
-        query = "SELECT hero_id FROM hero WHERE hero_name = '%s' " % name.replace("'","")
+        query = "SELECT hero_1'" \
+                "vehicles" \
+                "'/ FROM hero WHERE hero_name = '%s' " % name.replace("'","")
         try:
             self.cursor.execute(query)
             row = self.cursor.fetchone()
